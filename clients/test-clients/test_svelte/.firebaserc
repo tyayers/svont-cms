@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "cloud32x"
+  },
+  "targets": {
+    "cloud32x": {
+      "hosting": {
+        "cms-tg6qp4dq8": [
+          "cms-tg6qp4dq8"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

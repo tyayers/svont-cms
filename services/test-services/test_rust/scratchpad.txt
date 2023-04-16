@@ -1,0 +1,5 @@
+# Start service
+cargo run
+
+# Do a small load test for creating posts
+hey -n 200 -c 10 -m POST -D "./examples/post1.json" http://localhost:8080/posts

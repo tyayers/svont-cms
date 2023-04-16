@@ -1,0 +1,27 @@
+body {
+  margin: 0px;
+  font-family: sohne, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+a {
+  user-select: none;
+  color: #222;
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:visited {
+  text-decoration: none;
+  color: #222;
+}
+
+a:hover {
+  text-decoration: none;
+  color: darkgray
+}
+
+a:active {
+  text-decoration: none;
+}
