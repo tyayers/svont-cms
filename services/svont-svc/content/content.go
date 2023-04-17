@@ -53,17 +53,14 @@ func Initialize() {
 
 func Finalize() {
 	dataProvider.Finalize()
-	// jsonData, err := json.Marshal(postsMap)
-	// if err != nil {
-	// 	fmt.Printf("could not marshal json: %s\n", err)
-	// 	return
-	// }
-
-	// streamFileUpload("posts/index.json", jsonData)
 }
 
-func GetAllPosts(limit int, start int) map[string]data.PostOverview {
+func GetAllPosts(start int, limit int) map[string]data.PostOverview {
 	return dataProvider.GetIndex()
+}
+
+func GetPopularPosts(start int, limit int) []data.PostOverview {
+	return dataProvider.GetPopularPosts(start, limit)
 }
 
 func GetPost(postId string) *data.Post {

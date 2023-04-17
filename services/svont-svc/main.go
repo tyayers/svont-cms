@@ -36,6 +36,20 @@ func getPosts(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, content.GetAllPosts(start, limit))
 }
 
+func getPopularPosts(c *gin.Context) {
+	start, err := strconv.Atoi(c.Query("start"))
+	if err != nil {
+		start = 0
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit"))
+	if err != nil {
+		limit = 50
+	}
+
+	c.IndentedJSON(http.StatusOK, content.GetPopularPosts(start, limit))
+}
+
 func getPost(c *gin.Context) {
 	postId := c.Param("id")
 
@@ -290,7 +304,7 @@ func jwtValidation() gin.HandlerFunc {
 				log.Printf("Error verifying ID token: %v, rejecting.\n", err)
 				c.AbortWithStatus(401)
 			} else {
-				log.Printf("token claims %v", token)
+				//log.Printf("token claims %v", token)
 				c.Set("userEmail", token.Claims["email"])
 				c.Set("user_id", token.Claims["user_id"])
 			}
@@ -335,6 +349,7 @@ func main() {
 	//router.Use(jwtValidation())
 
 	router.GET("/posts", getPosts)
+	router.GET("/posts/popular", getPopularPosts)
 	router.GET("/posts/search", searchPosts)
 	router.GET("/posts/:id", getPost)
 	router.POST("/posts", jwtValidation(), createPost)

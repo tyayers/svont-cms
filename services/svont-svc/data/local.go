@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"sync"
 )
 
 type LocalProvider struct {
 	Index           map[string]PostOverview
+	IndexPopularity map[int][]string
 	IndexWriteMutex sync.Mutex
 }
 
@@ -27,6 +29,15 @@ func (provider *LocalProvider) Initialize() {
 		provider.Index = map[string]PostOverview{}
 	}
 
+	dat, _ = os.ReadFile("./localdata/index_popularity.json")
+	json.Unmarshal(dat, &provider.IndexPopularity)
+
+	if provider.IndexPopularity == nil {
+		provider.IndexPopularity = map[int][]string{}
+		// initialize 0 popularity slot
+		provider.IndexPopularity[0] = []string{}
+	}
+
 	provider.IndexWriteMutex = sync.Mutex{}
 }
 
@@ -41,6 +52,15 @@ func (provider *LocalProvider) Finalize() {
 	} else {
 		fmt.Printf("Successfully wrote index.")
 	}
+
+	jsonData, _ = json.Marshal(provider.IndexPopularity)
+	err = os.WriteFile("./localdata/index_popularity.json", jsonData, 0644)
+
+	if err != nil {
+		fmt.Printf("Could not write popularity index: %s", err)
+	} else {
+		fmt.Printf("Successfully wrote popularity index.")
+	}
 }
 
 // Returns the map index of post overviews
@@ -51,6 +71,30 @@ func (provider *LocalProvider) GetIndex() map[string]PostOverview {
 // Returns paginated posts array
 func (provider *LocalProvider) GetPosts(start int, limit int) []PostOverview {
 	return []PostOverview{}
+}
+
+// Returns paginated list of most popular posts
+func (provider *LocalProvider) GetPopularPosts(start int, limit int) []PostOverview {
+
+	postsByPopularity := []PostOverview{}
+
+	keys := make([]int, 0, len(provider.IndexPopularity))
+	for k := range provider.IndexPopularity {
+		keys = append(keys, k)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] > keys[j]
+	})
+
+	for _, v := range keys {
+		for i := range provider.IndexPopularity[v] {
+			postsByPopularity = append(postsByPopularity, provider.Index[provider.IndexPopularity[v][i]])
+		}
+
+	}
+
+	return postsByPopularity
 }
 
 // Returns the post specified by postId.
@@ -86,6 +130,7 @@ func (provider *LocalProvider) CreatePost(newPost Post, fileAttachments map[stri
 
 	provider.IndexWriteMutex.Lock()
 	provider.Index[newPost.Header.Id] = newPost.Header
+	provider.IndexPopularity[0] = append(provider.IndexPopularity[0], newPost.Header.Id)
 	provider.IndexWriteMutex.Unlock()
 
 	jsonData, _ := json.Marshal(newPost)
@@ -129,9 +174,30 @@ func (provider *LocalProvider) UpvotePost(postId string, userEmail string) (*Pos
 	if ok {
 		provider.IndexWriteMutex.Lock()
 		post.Upvotes++
+		provider.Index[postId] = post
+
+		// Remove item from previous popularity space
+		for i, s := range provider.IndexPopularity[post.Upvotes-1] {
+			fmt.Println(i, s)
+			if s == post.Id {
+				// We found our post in the old spot, now remove
+				provider.IndexPopularity[post.Upvotes-1][i] = provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] // Copy last element to index i.
+				provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] = ""                                          // Erase last element (write zero value).
+				provider.IndexPopularity[post.Upvotes-1] = provider.IndexPopularity[post.Upvotes-1][:len(provider.IndexPopularity[post.Upvotes-1])-1]   // Truncate slice.
+			}
+		}
+
+		// Add to new popularity spot
+		val, ok := provider.IndexPopularity[post.Upvotes]
+		// If the key exists
+		if ok {
+			val = append(val, post.Id)
+		} else {
+			provider.IndexPopularity[post.Upvotes] = []string{post.Id}
+		}
+
 		provider.IndexWriteMutex.Unlock()
 
-		provider.Index[postId] = post
 		return &post, nil
 	} else {
 		return nil, errors.New("Post not found")

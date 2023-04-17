@@ -38,6 +38,7 @@ type Provider interface {
 	Finalize()
 	GetIndex() map[string]PostOverview
 	GetPosts(start int, limit int) []PostOverview
+	GetPopularPosts(start int, limit int) []PostOverview
 	GetPost(postId string) *Post
 	GetPostOverview(postId string) *PostOverview
 	CreatePost(newPost Post, fileAttachments map[string][]byte) error
