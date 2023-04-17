@@ -20,6 +20,8 @@ This project was initially built for the SvelteSociety Hackathon 2023 (Feb 2023 
 
 Many frameworks were tested for this project, including solid, react, preact, vue, etc... You can find the tests in the clients/test-clients directory, but long-story-short svelte won out on capabilities, size & speed (preact was the other finalist). A blog article is coming with more detailed results of the comparison.
 
+The components used were developed in this [separate component project](https://github.com/tyayers/svelte-content-widgets), also showing how amazingly portable Svelte components are.
+
 ## Which use-cases is Svont good for?
 
 Svont is ideal for use-cases such as:
