@@ -57,26 +57,13 @@ export class DataServiceGoogle implements DataService {
     additionalInfo: "",
   });
 
+  defaultServer: string = import.meta.env.VITE_CMS_SERVICE;
+
   constructor() {
+    // In case no default server is set, just try to work with localhost
+    if (!this.defaultServer) this.defaultServer = "http://localhost:8080";
+
     if (browser) {
-      // if (
-      //   this.primitiveToBoolean(window.localStorage.getItem("UserSignedIn"))
-      // ) {
-      //   this.localUserState = UserState.SignedIn;
-      //   console.log(
-      //     `dataservice broadcasting userstate ${this.localUserState}`
-      //   );
-
-      //   this.userState.set(this.localUserState);
-      // } else {
-      //   this.localUserState = UserState.SignedOut;
-      //   console.log(
-      //     `dataservice broadcasting userstate ${this.localUserState}`
-      //   );
-
-      //   this.userState.set(this.localUserState);
-      // }
-
       this.auth.onAuthStateChanged((u: User) => {
         // if u is undefined, means we don't know user state
         // if u is null, means user is signed out
@@ -94,7 +81,7 @@ export class DataServiceGoogle implements DataService {
           this.user.update((n) => this.localUser);
 
           //if (browser)
-          goto("/");
+          goto("/home");
         } else {
           console.log("User changed event, user is there.");
           this.localUser = u as AppUser;
@@ -110,11 +97,6 @@ export class DataServiceGoogle implements DataService {
             console.log(`invalidating path ${window.location.pathname}`);
             invalidate(window.location.pathname);
           }
-
-          // if (browser)
-          // goto("/home");
-          // Now go to current pathname, now that we have the user
-          // goto(window.location.pathname);
         }
       });
     }
@@ -130,9 +112,6 @@ export class DataServiceGoogle implements DataService {
 
   GetIdToken(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      // If we don't have a user yet, then wait until we have one (or timeout)...
-      // while (!this.currentUser) this.sleep(100);
-
       if (this.currentUser) {
         this.currentUser
           .getIdToken(/* forceRefresh */ true)
@@ -173,7 +152,7 @@ export class DataServiceGoogle implements DataService {
   GetPosts(): Promise<PostOverviewCollection> {
     return new Promise<PostOverviewCollection>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(import.meta.env.VITE_CMS_SERVICE + "/posts", {
+        fetch(this.defaultServer + "/posts", {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -190,10 +169,30 @@ export class DataServiceGoogle implements DataService {
     });
   }
 
+  GetPopularPosts(): Promise<PostOverview[]> {
+    return new Promise<PostOverview[]>((resolve, reject) => {
+      this.GetIdToken().then((idToken) => {
+        fetch(this.defaultServer + "/posts/popular?limit=5", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
+          .then((response) => {
+            return response.json();
+          })
+          .then((data: PostOverview[]) => {
+            resolve(data);
+          });
+      });
+    });
+  }
+
   GetPost(postId: string): Promise<Post> {
     return new Promise<Post>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId, {
+        fetch(this.defaultServer + "/posts/" + postId, {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -214,7 +213,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<Post>((resolve, reject) => {
       this.GetIdToken()
         .then((idToken) => {
-          fetch(import.meta.env.VITE_CMS_SERVICE + "/posts", {
+          fetch(this.defaultServer + "/posts", {
             body: postData,
             method: "POST",
             headers: {
@@ -239,7 +238,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<Post>((resolve, reject) => {
       this.GetIdToken()
         .then((idToken) => {
-          fetch(import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId, {
+          fetch(this.defaultServer + "/posts/" + postId, {
             body: postData,
             method: "PUT",
             headers: {
@@ -264,7 +263,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<boolean>((resolve, reject) => {
       this.GetIdToken()
         .then((idToken) => {
-          fetch(import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId, {
+          fetch(this.defaultServer + "/posts/" + postId, {
             method: "DELETE",
             headers: {
               Accept: "application/json",
@@ -293,16 +292,13 @@ export class DataServiceGoogle implements DataService {
   UpVote(postId: string, user: AppUser): Promise<PostOverview> {
     return new Promise((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(
-          import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId + "/upvote",
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              Authorization: "Bearer " + idToken,
-            },
-          }
-        )
+        fetch(this.defaultServer + "/posts/" + postId + "/upvote", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
           .then((response) => {
             return response.json();
           })
@@ -324,16 +320,13 @@ export class DataServiceGoogle implements DataService {
   GetComments(postId: string): Promise<PostComment[]> {
     return new Promise((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(
-          import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId + "/comments",
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              Authorization: "Bearer " + idToken,
-            },
-          }
-        )
+        fetch(this.defaultServer + "/posts/" + postId + "/comments", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
           .then((response) => {
             return response.json();
           })
@@ -351,17 +344,14 @@ export class DataServiceGoogle implements DataService {
     return new Promise((resolve, reject) => {
       this.GetIdToken()
         .then((idToken) => {
-          fetch(
-            import.meta.env.VITE_CMS_SERVICE + "/posts/" + postId + "/comments",
-            {
-              body: newCommentData,
-              method: "post",
-              headers: {
-                Accept: "application/json",
-                Authorization: "Bearer " + idToken,
-              },
-            }
-          )
+          fetch(this.defaultServer + "/posts/" + postId + "/comments", {
+            body: newCommentData,
+            method: "post",
+            headers: {
+              Accept: "application/json",
+              Authorization: "Bearer " + idToken,
+            },
+          })
             .then((response) => {
               return response.json();
             })
@@ -383,7 +373,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<PostComment>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
         fetch(
-          import.meta.env.VITE_CMS_SERVICE +
+          this.defaultServer +
             "/posts/" +
             postId +
             "/comments/" +
@@ -411,7 +401,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<SearchResult[]>((resolve, reject) => {
       if (input) {
         this.GetIdToken().then(function (idToken) {
-          fetch(import.meta.env.VITE_CMS_SERVICE + "/posts/search?q=" + input, {
+          fetch(this.defaultServer + "/posts/search?q=" + input, {
             method: "GET",
             headers: {
               Accept: "application/json",

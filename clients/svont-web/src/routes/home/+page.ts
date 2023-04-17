@@ -4,5 +4,8 @@ import { UserState } from "../../lib/DataInterface";
 import { appService } from "../../lib/DataService";
 
 export const load: PageLoad = (({ params }) => {
-  return appService.GetPosts();
+  return {
+    posts: appService.GetPosts(),
+    popular: appService.GetPopularPosts(),
+  };
 }) satisfies PageLoad;

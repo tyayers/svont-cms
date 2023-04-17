@@ -9,7 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -19,9 +19,11 @@ import (
 
 type GCSProvider struct {
 	Index           map[string]PostOverview
+	IndexPopularity map[int][]string
 	IndexWriteMutex sync.Mutex
 }
 
+// Initialize loads persisted data structures from storage, if available
 func (provider *GCSProvider) Initialize() {
 
 	log.Printf("Initializing Google Cloud Storage data provider.")
@@ -36,14 +38,44 @@ func (provider *GCSProvider) Initialize() {
 		provider.Index = map[string]PostOverview{}
 	}
 
+	postBytes, err = downloadFileIntoMemory("posts/index_popularity.json")
+
+	if err == nil {
+		json.Unmarshal(postBytes, &provider.IndexPopularity)
+	}
+
+	if provider.IndexPopularity == nil {
+		provider.IndexPopularity = map[int][]string{}
+		provider.IndexPopularity[0] = []string{}
+	}
+
 	provider.IndexWriteMutex = sync.Mutex{}
 }
 
+// Finalize writes the data structures to storage
 func (provider *GCSProvider) Finalize() {
-	//_, err := os.Create("./localdata/index.json")
 
-	jsonData, _ := json.Marshal(provider.Index)
-	err := os.WriteFile("./localdata/index.json", jsonData, 0644)
+	jsonData, err := json.Marshal(provider.Index)
+	if err != nil {
+		fmt.Printf("could not marshal json: %s\n", err)
+		return
+	}
+
+	streamFileUpload("posts/index.json", jsonData)
+
+	if err != nil {
+		fmt.Printf("Could not write index: %s", err)
+	} else {
+		fmt.Printf("Successfully wrote index.")
+	}
+
+	jsonData, err = json.Marshal(provider.IndexPopularity)
+	if err != nil {
+		fmt.Printf("could not marshal json: %s\n", err)
+		return
+	}
+
+	streamFileUpload("posts/index_popularity.json", jsonData)
 
 	if err != nil {
 		fmt.Printf("Could not write index: %s", err)
@@ -62,31 +94,72 @@ func (provider *GCSProvider) GetPosts(start int, limit int) []PostOverview {
 	return []PostOverview{}
 }
 
-// Returns the post specified by postId.
-func (provider *GCSProvider) GetPost(postId string) Post {
+// Returns paginated list of most popular posts
+func (provider *GCSProvider) GetPopularPosts(start int, limit int) []PostOverview {
 
-	dat, _ := os.ReadFile("./localdata/" + postId + "/post.json")
+	postsByPopularity := []PostOverview{}
+
+	keys := make([]int, 0, len(provider.IndexPopularity))
+	for k := range provider.IndexPopularity {
+		keys = append(keys, k)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] > keys[j]
+	})
+
+	for _, v := range keys {
+		for i := range provider.IndexPopularity[v] {
+			postsByPopularity = append(postsByPopularity, provider.Index[provider.IndexPopularity[v][i]])
+
+			if len(postsByPopularity) >= limit {
+				break
+			} 
+		}
+
+		if len(postsByPopularity) >= limit {
+			break
+		}
+	}
+
+	return postsByPopularity
+}
+
+// Returns the post specified by postId.
+func (provider *GCSProvider) GetPost(postId string) *Post {
+
+	dat, _ := downloadFileIntoMemory("posts/" + postId + "/post.json")
 
 	var post Post
 	json.Unmarshal(dat, &post)
 
 	post.Header = provider.Index[postId]
 
-	return post
+	return &post
+}
+
+// Returns the post overview
+func (provider *GCSProvider) GetPostOverview(postId string) *PostOverview {
+
+	post, ok := provider.Index[postId]
+
+	if ok {
+		return &post
+	} else {
+		return nil
+	}
 }
 
 // Creates a new post.
 func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string][]byte) error {
-	if err := os.Mkdir("./localdata/"+newPost.Header.Id, os.ModePerm); err != nil {
-		return err
-	}
 
 	provider.IndexWriteMutex.Lock()
 	provider.Index[newPost.Header.Id] = newPost.Header
+	provider.IndexPopularity[0] = append(provider.IndexPopularity[0], newPost.Header.Id)
 	provider.IndexWriteMutex.Unlock()
 
 	jsonData, _ := json.Marshal(newPost)
-	err := os.WriteFile("./localdata/"+newPost.Header.Id+"/post.json", jsonData, 0644)
+	err := streamFileUpload("posts/" + newPost.Header.Id + "/post.json", jsonData)
 
 	if err != nil {
 		return err
@@ -96,8 +169,26 @@ func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string
 }
 
 // Updates a post
-func (provider *GCSProvider) UpdatePost(post Post) {
+func (provider *GCSProvider) UpdatePost(post Post, fileAttachments map[string][]byte) error {
 
+	provider.IndexWriteMutex.Lock()
+	header := provider.Index[post.Header.Id]
+	header.Title = post.Header.Title
+	header.Summary = post.Header.Summary
+	header.Updated = post.Header.Updated
+	provider.Index[post.Header.Id] = header
+	provider.IndexWriteMutex.Unlock()
+
+	post.Header = header
+
+	jsonData, _ := json.Marshal(post)
+	err := streamFileUpload("posts/" + post.Header.Id + "/post.json", jsonData)
+
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
 
 // Increases the upvote count by 1 for a post identified by postId
@@ -108,9 +199,30 @@ func (provider *GCSProvider) UpvotePost(postId string, userEmail string) (*PostO
 	if ok {
 		provider.IndexWriteMutex.Lock()
 		post.Upvotes++
+		provider.Index[postId] = post
+
+		// Remove item from previous popularity space
+		for i, s := range provider.IndexPopularity[post.Upvotes-1] {
+			fmt.Println(i, s)
+			if s == post.Id {
+				// We found our post in the old spot, now remove
+				provider.IndexPopularity[post.Upvotes-1][i] = provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] // Copy last element to index i.
+				provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] = ""                                          // Erase last element (write zero value).
+				provider.IndexPopularity[post.Upvotes-1] = provider.IndexPopularity[post.Upvotes-1][:len(provider.IndexPopularity[post.Upvotes-1])-1]   // Truncate slice.
+			}
+		}
+
+		// Add to new popularity spot
+		val, ok := provider.IndexPopularity[post.Upvotes]
+		// If the key exists
+		if ok {
+			val = append(val, post.Id)
+		} else {
+			provider.IndexPopularity[post.Upvotes] = []string{post.Id}
+		}
+
 		provider.IndexWriteMutex.Unlock()
 
-		provider.Index[postId] = post
 		return &post, nil
 	} else {
 		return nil, errors.New("Post not found")
@@ -119,10 +231,9 @@ func (provider *GCSProvider) UpvotePost(postId string, userEmail string) (*PostO
 
 // Adds a comment to the post identified by postId, and optionally nested under a parent comment
 // identified by parentCommentId
-func (provider *GCSProvider) AddComment(postId string, parentCommentId string, content string) (*[]PostComment, error) {
+func (provider *GCSProvider) CreateComment(postId string, parentCommentId string, newComment *PostComment) (*[]PostComment, error) {
 
 	var postComments []PostComment = nil
-	var newComment *PostComment = nil
 
 	post, ok := provider.Index[postId]
 
@@ -130,12 +241,7 @@ func (provider *GCSProvider) AddComment(postId string, parentCommentId string, c
 		return nil, errors.New(fmt.Sprintf("Post %s not found!", postId))
 	}
 
-	newComment = new(PostComment)
-	newComment.Id = time.Now().Format("20060102_150405.99_") + RandomString(12)
-	newComment.Children = []PostComment{}
-	newComment.Content = content
-
-	dat, err := os.ReadFile("./localdata/" + postId + "/comments.json")
+	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
 
 	if err != nil {
 		postComments = *new([]PostComment)
@@ -154,12 +260,12 @@ func (provider *GCSProvider) AddComment(postId string, parentCommentId string, c
 		res := AddCommentToParent(&postComments, parentCommentId, newComment)
 
 		if !res {
-			return nil, errors.New(fmt.Sprintf("Could not find post '%s' to add comment to.", parentCommentId))
+			return nil, errors.New(fmt.Sprintf("Could not find comment '%s' to add comment to.", parentCommentId))
 		}
 	}
 
 	jsonData, _ := json.Marshal(postComments)
-	err = os.WriteFile("./localdata/"+postId+"/comments.json", jsonData, 0644)
+	err = streamFileUpload("posts/" + postId + "/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -178,10 +284,11 @@ func (provider *GCSProvider) AddComment(postId string, parentCommentId string, c
 func (provider *GCSProvider) GetComments(postId string) (*[]PostComment, error) {
 	var postComments []PostComment = nil
 
-	dat, err := os.ReadFile("./localdata/" + postId + "/comments.json")
+	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
 
 	if err != nil {
-		return nil, err
+		postComments = *new([]PostComment)
+		return &postComments, nil
 	} else {
 		err = json.Unmarshal(dat, &postComments)
 
@@ -193,17 +300,57 @@ func (provider *GCSProvider) GetComments(postId string) (*[]PostComment, error) 
 	}
 }
 
+// Increases the upvote count by 1 for a post identified by postId
+func (provider *GCSProvider) UpvoteComment(postId string, commentId string, userEmail string) (*PostComment, error) {
+
+	var postComments []PostComment = nil
+
+	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Comments for post %s not found!", postId))
+	} else {
+		err = json.Unmarshal(dat, &postComments)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	upvotedComment := UpvoteComment(&postComments, commentId)
+
+	jsonData, _ := json.Marshal(postComments)
+	err = streamFileUpload("posts/" + postId + "/comments.json", jsonData)
+
+	if err != nil {
+		return nil, err
+	} else {
+		return upvotedComment, nil
+	}
+}
+
 // Deletes the post identified by postId
 func (provider *GCSProvider) DeletePost(postId string) error {
 
 	provider.IndexWriteMutex.Lock()
+
+	// Remove item from popularity space
+	for i, s := range provider.IndexPopularity[provider.Index[postId].Upvotes] {
+		if s == postId {
+			// We found our post in the old spot, now remove
+			provider.IndexPopularity[provider.Index[postId].Upvotes][i] = provider.IndexPopularity[provider.Index[postId].Upvotes][len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1] // Copy last element to index i.
+			provider.IndexPopularity[provider.Index[postId].Upvotes][len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1] = ""                                          // Erase last element (write zero value).
+			provider.IndexPopularity[provider.Index[postId].Upvotes] = provider.IndexPopularity[provider.Index[postId].Upvotes][:len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1]   // Truncate slice.
+		}
+	}
+
 	delete(provider.Index, postId)
+
 	provider.IndexWriteMutex.Unlock()
 
-	err := os.RemoveAll("./localdata/" + postId)
-
+	err := deleteObject("posts/" + postId)
 	if err != nil {
-		fmt.Printf("Error deleting post: %s", err)
+		fmt.Printf("could not delete post %s: %s\n", postId, err)
 		return err
 	} else {
 		return nil

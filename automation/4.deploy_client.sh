@@ -1,4 +1,4 @@
-cd ../clients/test_vite_svelte
+cd ../clients/svont-web
 
 echo "Replace variables in the client code..."
 sed -i "/VITE_CMS_SERVICE=/c\VITE_CMS_SERVICE=$CLOUD_RUN_URL" .env.production
@@ -13,7 +13,7 @@ firebase login --no-localhost
 echo "Now deploying client to firebase..."
 firebase projects:addfirebase $PROJECT || true
 
-FIREBASE_NAME=${BUCKET_NAME//_/-}
+# FIREBASE_NAME=${BUCKET_NAME//_/-}
 
 echo "Setting Firebase config..."
 #firebase init hosting

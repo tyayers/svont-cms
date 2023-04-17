@@ -3,6 +3,8 @@
   import PostHeader from "../../../lib/Post.header.svelte";
   import PostFooter from "../../../lib/Post.footer.svelte";
   import Comments from "../../../lib/Comments.svelte";
+  import PostPopularWidget from "../../../lib/Post.popular.svelte"
+
   import type {
     PostOverviewCollection,
     Post,
@@ -65,7 +67,9 @@
         {/if}
       </div>
       <div class="post-sidebar">
-        <div class="post-sidebar-content" />
+        <div class="post-sidebar-content">
+          <PostPopularWidget posts={data.popular} />
+        </div>
       </div>
     </div>
   </div>
@@ -139,6 +143,7 @@
     } */
     .post-sidebar {
       min-width: 0;
+      display: none;
     }
   }
 

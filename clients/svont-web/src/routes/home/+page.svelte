@@ -1,10 +1,12 @@
 <script lang="ts">
   import Header from "../../lib/Header.svelte";
   import PostCard from "../../lib/Post.card.svelte";
+  import PostPopularWidget from "../../lib/Post.popular.svelte"
+
   import {appService} from "$lib/DataService"
   import type { PostOverviewCollection } from "$lib/DataInterface";
 
-  export let data: PostOverviewCollection;
+  export let data;
 
 </script>
 
@@ -12,11 +14,11 @@
   <Header />
 
   <div class="cf">
-    {#if data}
+    {#if data && data.posts}
       <div class="fl">
         <div class="cc">
           <div>
-            {#each Object.values(data).reverse() as post}
+            {#each Object.values(data.posts).reverse() as post}
               <div>
                 <PostCard {post} />
               </div>
@@ -24,7 +26,9 @@
           </div>
         </div>
         <div class="sb">
-          <div class="sc" />
+          <div class="sc">
+            <PostPopularWidget posts={data.popular} />
+          </div>
         </div>
       </div>
     {/if}
@@ -68,6 +72,10 @@
 
     .sb {
       min-width: 0;
+    }
+
+    .sc {
+      display: none;
     }
   }
 

@@ -90,8 +90,15 @@ func (provider *LocalProvider) GetPopularPosts(start int, limit int) []PostOverv
 	for _, v := range keys {
 		for i := range provider.IndexPopularity[v] {
 			postsByPopularity = append(postsByPopularity, provider.Index[provider.IndexPopularity[v][i]])
+
+			if len(postsByPopularity) >= limit {
+				break
+			} 
 		}
 
+		if len(postsByPopularity) >= limit {
+			break
+		}
 	}
 
 	return postsByPopularity

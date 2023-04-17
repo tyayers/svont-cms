@@ -21,10 +21,10 @@ var postsMap = map[string]data.PostOverview{}
 var searchIndex bleve.Index
 
 // Local data provider, uncomment to test locally with files (in localdata dir)
-var dataProvider data.Provider = &data.LocalProvider{}
+// var dataProvider data.Provider = &data.LocalProvider{}
 
 // Google Cloud Storage provider, uncomment to use GCS as storage provider
-// var dataProvider data.Provider = &data.GCSProvider{}
+var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize() {
 	dataProvider.Initialize()
