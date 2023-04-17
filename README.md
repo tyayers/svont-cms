@@ -6,6 +6,8 @@ Svont (**sv**elte+c**ont**ent) is a simple, feature-rich Content Collaboration S
 
 Check out a first **[test deployment](https://svont-ccs-test.web.app/)** (using the [Google Cloud Run](https://cloud.google.com/run) serverless platform, [Google Cloud Storage](https://cloud.google.com/storage) for storage, and [Firebase hosting](https://firebase.google.com/docs/hosting) for static hosting).
 
+![Screenshot](screen.png)
+
 You can browse some test posts, as well as sign in with a Google account and post / like / comment.
 
 ## Why another CMS/CCS?
