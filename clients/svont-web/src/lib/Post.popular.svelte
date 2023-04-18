@@ -6,7 +6,7 @@
 </script>
 
 <div class="frame">
-  <span class="frame_title">Popular</span>
+  <span class="frame_title">Popular✨</span>
   <div class="posts_frame">
     {#each posts as post}
       <div class="post_frame">
@@ -41,8 +41,8 @@
 
   .frame_title {
     color: rgba(41, 41, 41, 1);
-    font-weight: 500;
-    font-size: 16px;
+    font-weight: 600;
+    font-size: 17px;
     margin-bottom: 6px;
   }
 

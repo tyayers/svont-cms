@@ -61,7 +61,6 @@
   .frame {
     margin: 0px 24px;
     max-width: 680px;
-    width: 100%;
     height: 100%;
   }
 

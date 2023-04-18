@@ -13,20 +13,23 @@
 <div>
   <Header />
 
-  <div class="cf">
+  <div class="content">
     {#if data && data.posts}
-      <div class="fl">
-        <div class="cc">
-          <div>
+      <div class="container">
+        <div class="panel_left">
+          <div class="pannel_left_inner">
             {#each Object.values(data.posts).reverse() as post}
               <div>
                 <PostCard {post} />
               </div>
             {/each}
+            <div class="pannel_left_footer">
+              
+            </div>
           </div>
         </div>
-        <div class="sb">
-          <div class="sc">
+        <div class="panel_right">
+          <div class="widget1">
             <PostPopularWidget posts={data.popular} />
           </div>
         </div>
@@ -36,31 +39,49 @@
 </div>
 
 <style>
-  .cf {
+  .content {
     max-width: 1336px;
     text-align: left;
     margin: auto;
     height: 100%;
+    height: calc(100vh - 58px);
+    overflow-y: hidden;
   }
 
-  .fl {
+  .container {
     display: flex;
     justify-content: space-evenly;
     flex-direction: row;
+    height: 100%;
   }
 
-  .cc {
-    max-width: 728px;
+  .panel_left {
+    width: 100%;
     flex: 1 1 auto;
     justify-content: center;
+    display: inline-flex;
+    height: 100%;
+    overflow-y: scroll;
   }
 
-  .sb {
+  .pannel_left_inner {
+    max-width: 728px;
+    width: 100%;
+    padding-bottom: 54px;
+  }
+
+  .pannel_left_footer {
+    height: 24px;
+  }
+
+  .panel_right {
     min-height: 100vh;
     border-left: 1px solid rgba(242, 242, 242, 1);
+    padding-left: 32px;
+    min-width: 420px;
   }
 
-  .sc {
+  .widget1 {
     height: 100%;
     width: 100%;
   }
@@ -74,7 +95,7 @@
       min-width: 0;
     }
 
-    .sc {
+    .panel_right {
       display: none;
     }
   }
