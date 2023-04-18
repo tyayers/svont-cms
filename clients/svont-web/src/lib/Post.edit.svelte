@@ -39,7 +39,7 @@
     for (var i = 0; i < wordLimit; i++) {
       summaryText += " " + textPieces[i];
     }
-    if (wordLimit > textPieces.length) summaryText += "...";
+    if (textPieces.length > wordLimit) summaryText += "...";
     formData.set("content", content);
 
     // Set summary

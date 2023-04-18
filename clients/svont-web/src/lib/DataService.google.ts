@@ -81,7 +81,7 @@ export class DataServiceGoogle implements DataService {
           this.user.update((n) => this.localUser);
 
           //if (browser)
-          goto("/home");
+          //goto("/home");
         } else {
           console.log("User changed event, user is there.");
           this.localUser = u as AppUser;
@@ -400,7 +400,7 @@ export class DataServiceGoogle implements DataService {
   SearchPosts(input: string): Promise<SearchResult[]> {
     return new Promise<SearchResult[]>((resolve, reject) => {
       if (input) {
-        this.GetIdToken().then(function (idToken) {
+        this.GetIdToken().then((idToken) => {
           fetch(this.defaultServer + "/posts/search?q=" + input, {
             method: "GET",
             headers: {

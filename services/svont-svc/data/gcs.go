@@ -114,7 +114,7 @@ func (provider *GCSProvider) GetPopularPosts(start int, limit int) []PostOvervie
 
 			if len(postsByPopularity) >= limit {
 				break
-			} 
+			}
 		}
 
 		if len(postsByPopularity) >= limit {
@@ -159,7 +159,7 @@ func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string
 	provider.IndexWriteMutex.Unlock()
 
 	jsonData, _ := json.Marshal(newPost)
-	err := streamFileUpload("posts/" + newPost.Header.Id + "/post.json", jsonData)
+	err := streamFileUpload("posts/"+newPost.Header.Id+"/post.json", jsonData)
 
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func (provider *GCSProvider) UpdatePost(post Post, fileAttachments map[string][]
 	post.Header = header
 
 	jsonData, _ := json.Marshal(post)
-	err := streamFileUpload("posts/" + post.Header.Id + "/post.json", jsonData)
+	err := streamFileUpload("posts/"+post.Header.Id+"/post.json", jsonData)
 
 	if err != nil {
 		return err
@@ -217,6 +217,7 @@ func (provider *GCSProvider) UpvotePost(postId string, userEmail string) (*PostO
 		// If the key exists
 		if ok {
 			val = append(val, post.Id)
+			provider.IndexPopularity[post.Upvotes] = val
 		} else {
 			provider.IndexPopularity[post.Upvotes] = []string{post.Id}
 		}
@@ -265,7 +266,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 	}
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload("posts/" + postId + "/comments.json", jsonData)
+	err = streamFileUpload("posts/"+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -320,7 +321,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 	upvotedComment := UpvoteComment(&postComments, commentId)
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload("posts/" + postId + "/comments.json", jsonData)
+	err = streamFileUpload("posts/"+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -339,7 +340,7 @@ func (provider *GCSProvider) DeletePost(postId string) error {
 		if s == postId {
 			// We found our post in the old spot, now remove
 			provider.IndexPopularity[provider.Index[postId].Upvotes][i] = provider.IndexPopularity[provider.Index[postId].Upvotes][len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1] // Copy last element to index i.
-			provider.IndexPopularity[provider.Index[postId].Upvotes][len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1] = ""                                          // Erase last element (write zero value).
+			provider.IndexPopularity[provider.Index[postId].Upvotes][len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1] = ""                                                          // Erase last element (write zero value).
 			provider.IndexPopularity[provider.Index[postId].Upvotes] = provider.IndexPopularity[provider.Index[postId].Upvotes][:len(provider.IndexPopularity[provider.Index[postId].Upvotes])-1]   // Truncate slice.
 		}
 	}
