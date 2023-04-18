@@ -203,7 +203,6 @@ func (provider *GCSProvider) UpvotePost(postId string, userEmail string) (*PostO
 
 		// Remove item from previous popularity space
 		for i, s := range provider.IndexPopularity[post.Upvotes-1] {
-			fmt.Println(i, s)
 			if s == post.Id {
 				// We found our post in the old spot, now remove
 				provider.IndexPopularity[post.Upvotes-1][i] = provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] // Copy last element to index i.

@@ -185,7 +185,6 @@ func (provider *LocalProvider) UpvotePost(postId string, userEmail string) (*Pos
 
 		// Remove item from previous popularity space
 		for i, s := range provider.IndexPopularity[post.Upvotes-1] {
-			fmt.Println(i, s)
 			if s == post.Id {
 				// We found our post in the old spot, now remove
 				provider.IndexPopularity[post.Upvotes-1][i] = provider.IndexPopularity[post.Upvotes-1][len(provider.IndexPopularity[post.Upvotes-1])-1] // Copy last element to index i.
@@ -199,6 +198,7 @@ func (provider *LocalProvider) UpvotePost(postId string, userEmail string) (*Pos
 		// If the key exists
 		if ok {
 			val = append(val, post.Id)
+			provider.IndexPopularity[post.Upvotes] = val
 		} else {
 			provider.IndexPopularity[post.Upvotes] = []string{post.Id}
 		}
