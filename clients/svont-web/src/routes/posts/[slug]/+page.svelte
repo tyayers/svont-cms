@@ -65,6 +65,9 @@
               <h3 class="post-comments-header">Comments</h3>
               <Comments {createComment} {upvoteComment} data={data.comments} />
             </div>
+            <div class="pannel_left_footer">
+              
+            </div>
           {/if}
         </div>
       </div>
@@ -110,7 +113,7 @@
   }
 
   .pannel_left_footer {
-    height: 24px;
+    height: 84px;
   }
 
   .panel_right {
