@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"mime/multipart"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -15,8 +16,10 @@ import (
 	"github.com/blevesearch/bleve/v2"
 )
 
-var postsMutex = &sync.Mutex{}
-var postsMap = map[string]data.PostOverview{}
+var postsMutex = sync.Mutex{}
+var index map[string]data.PostOverview
+var index_time map[int64]string
+var index_popularity map[int][]string
 
 var searchIndex bleve.Index
 
@@ -27,7 +30,7 @@ var dataProvider data.Provider = &data.LocalProvider{}
 // var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize() {
-	dataProvider.Initialize()
+	index, index_time, index_popularity = dataProvider.Initialize()
 
 	// Initialize bleve search index, if it doesn't exist
 	if _, err := os.Stat("./posts.bleve"); os.IsNotExist(err) {
@@ -39,7 +42,7 @@ func Initialize() {
 			fmt.Println(err)
 		}
 
-		for k, v := range dataProvider.GetIndex() {
+		for k, v := range index {
 			fmt.Printf("indexing key[%s] value[%s]\n", k, v.Id)
 			searchIndex.Index(v.Id, v)
 		}
@@ -52,32 +55,61 @@ func Initialize() {
 }
 
 func Finalize() {
-	dataProvider.Finalize()
+	dataProvider.Finalize(index, index_time, index_popularity)
 }
 
 func GetAllPosts(start int, limit int) map[string]data.PostOverview {
-	return dataProvider.GetIndex()
+	return index
 }
 
 func GetPopularPosts(start int, limit int) []data.PostOverview {
-	return dataProvider.GetPopularPosts(start, limit)
+	postsByPopularity := []data.PostOverview{}
+
+	keys := make([]int, 0, len(index_popularity))
+	for k := range index_popularity {
+		keys = append(keys, k)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] > keys[j]
+	})
+
+	for _, v := range keys {
+		for i := range index_popularity[v] {
+			postsByPopularity = append(postsByPopularity, index[index_popularity[v][i]])
+
+			if len(postsByPopularity) >= limit {
+				break
+			}
+		}
+
+		if len(postsByPopularity) >= limit {
+			break
+		}
+	}
+
+	return postsByPopularity
 }
 
 func GetPost(postId string) *data.Post {
-	return dataProvider.GetPost(postId)
+	var post = dataProvider.GetPost(postId)
+	post.Header = index[postId]
+	return post
 }
 
-func GetPostOverview(postId string) *data.PostOverview {
-	return dataProvider.GetPostOverview(postId)
+func GetPostOverview(postId string) data.PostOverview {
+	return index[postId]
 }
 
 func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
+
+	var createTime = time.Now()
 
 	newPost.Header.Id = time.Now().Format("20060102_") + RandomString(12)
 	// newPost.Header.Id = time.Now().Format("20060102_150405.99_") + strings.Replace(strings.ToLower(newPost.Title), " ", "_", -1)
 	// newPost.Header.Id = time.Now().Format("20060102_") + strings.Replace(strings.ToLower(newPost.Header.Title), " ", "_", -1)
 	newPost.Files = []string{}
-	newPost.Header.Created = time.Now().Format("2006-01-02T15:04:05-0700")
+	newPost.Header.Created = createTime.Format("2006-01-02T15:04:05-0700")
 
 	files := map[string][]byte{}
 	for _, attachment := range attachments {
@@ -86,12 +118,28 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 
 		bytes, _ := ioutil.ReadAll(src)
 		files[attachment.Filename] = bytes
+		// TODO upload attachments
 		// streamFileUpload("posts/"+newPost.Header.Id+"/"+attachment.Filename, bytes)
 
 		newPost.Files = append(newPost.Files, attachment.Filename)
 	}
 
 	newPost.Header.FileCount = len(newPost.Files)
+
+	postsMutex.Lock()
+	index[newPost.Header.Id] = newPost.Header
+	index_popularity[0] = append(index_popularity[0], newPost.Header.Id)
+
+	// Add to new popularity spot
+	_, ok := index_time[createTime.UnixNano()]
+	// If the key exists
+	if ok {
+		// ERROR slot with timestamp exists!!
+		index_time[createTime.UnixNano()+1] = newPost.Header.Id
+	} else {
+		index_time[createTime.UnixNano()] = newPost.Header.Id
+	}
+	postsMutex.Unlock()
 
 	err := dataProvider.CreatePost(*newPost, files)
 
@@ -124,6 +172,16 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 
 	updatedPost.Header.FileCount = len(updatedPost.Files)
 
+	postsMutex.Lock()
+	header := index[updatedPost.Header.Id]
+	header.Title = updatedPost.Header.Title
+	header.Summary = updatedPost.Header.Summary
+	header.Updated = updatedPost.Header.Updated
+	index[updatedPost.Header.Id] = header
+	postsMutex.Unlock()
+
+	updatedPost.Header = header
+
 	err := dataProvider.UpdatePost(*updatedPost, files)
 
 	if err != nil {
@@ -135,27 +193,42 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 
 		return nil
 	}
-
-	// if entry, ok := postsMap[updatedPost.Header.Id]; ok {
-	// 	entry.Title = updatedPost.Header.Title
-	// 	postsMutex.Lock()
-	// 	postsMap[updatedPost.Header.Id] = entry
-	// 	postsMutex.Unlock()
-	// }
-
-	// if writeToStorage {
-	// 	jsonData, err := json.Marshal(updatedPost)
-	// 	if err != nil {
-	// 		fmt.Printf("could not marshal json: %s\n", err)
-	// 		return
-	// 	}
-
-	// 	streamFileUpload("posts/"+updatedPost.Header.Id+"/post.json", jsonData)
-	// }
 }
 
 func UpvotePost(postId string, userEmail string) (*data.PostOverview, error) {
-	return dataProvider.UpvotePost(postId, userEmail)
+
+	post, ok := index[postId]
+
+	if ok {
+		postsMutex.Lock()
+		post.Upvotes++
+		index[postId] = post
+
+		// Remove item from previous popularity space
+		for i, s := range index_popularity[post.Upvotes-1] {
+			if s == post.Id {
+				// We found our post in the old spot, now remove
+				index_popularity[post.Upvotes-1][i] = index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] // Copy last element to index i.
+				index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] = ""                                  // Erase last element (write zero value).
+				index_popularity[post.Upvotes-1] = index_popularity[post.Upvotes-1][:len(index_popularity[post.Upvotes-1])-1]   // Truncate slice.
+			}
+		}
+
+		// Add to new popularity spot
+		val, ok := index_popularity[post.Upvotes]
+		// If the key exists
+		if ok {
+			index_popularity[post.Upvotes] = append(val, post.Id)
+		} else {
+			index_popularity[post.Upvotes] = []string{post.Id}
+		}
+
+		postsMutex.Unlock()
+
+		return &post, nil
+	} else {
+		return nil, errors.New("Post not found")
+	}
 }
 
 func AddCommentToPost(postId string, parentCommentId string, authorId string, authorDisplayName string, authorProfilePic string, content string) (*[]data.PostComment, error) {
@@ -169,13 +242,25 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 	newComment.Children = []data.PostComment{}
 	newComment.Content = content
 
-	return dataProvider.CreateComment(postId, parentCommentId, newComment)
-}
+	post, ok := index[postId]
 
-// func AddCommentToPost(postId string, parentCommentId string, newComment *data.PostComment) (error) {
-// 	newComment.Id = time.Now().Format("20060102_150405.99_") + RandomString(12)
-// 	return dataProvider.CreateComment(postId, parentCommentId, newComment)
-// }
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Post %s not found!", postId))
+	} else {
+		result, err := dataProvider.CreateComment(postId, parentCommentId, newComment)
+
+		if err == nil {
+			postsMutex.Lock()
+			post.CommentCount++
+			index[postId] = post
+			postsMutex.Unlock()
+
+			return result, nil
+		} else {
+			return nil, err
+		}
+	}
+}
 
 // Gets all of the comments for a post
 func GetComments(postId string) (*[]data.PostComment, error) {
@@ -203,17 +288,12 @@ func AttachFileToPost(postId string, fileName string, file []byte) {
 
 // Deletes a post
 func DeletePost(postId string) error {
-	// err := deleteObject("posts/" + postId)
-	// if err != nil {
-	// 	fmt.Printf("could not delete post %s: %s\n", postId, err)
-	// 	return err
-	// }
 
-	// postsMutex.Lock()
-	// delete(postsMap, postId)
-	// postsMutex.Unlock()
+	postsMutex.Lock()
+	delete(index, postId)
+	// TODO delete from index_time and index_popularity
+	postsMutex.Unlock()
 
-	// return nil
 	return dataProvider.DeletePost(postId)
 }
 
@@ -231,7 +311,7 @@ func SearchPosts(text string) ([]data.PostOverview, error) {
 		} else {
 			results := []data.PostOverview{}
 			fmt.Println(searchResults)
-			dataMap := dataProvider.GetIndex()
+			dataMap := index
 			for _, val := range searchResults.Hits {
 				results = append(results, dataMap[val.ID])
 			}

@@ -34,16 +34,12 @@ type Post struct {
 }
 
 type Provider interface {
-	Initialize()
-	Finalize()
-	GetIndex() map[string]PostOverview
-	GetPosts(start int, limit int) []PostOverview
-	GetPopularPosts(start int, limit int) []PostOverview
+	Initialize() (map[string]PostOverview, map[int64]string, map[int][]string)
+	Finalize(index_main map[string]PostOverview, index_time map[int64]string, index_populary map[int][]string)
 	GetPost(postId string) *Post
-	GetPostOverview(postId string) *PostOverview
+
 	CreatePost(newPost Post, fileAttachments map[string][]byte) error
 	UpdatePost(post Post, fileAttachments map[string][]byte) error
-	UpvotePost(postId string, userEmail string) (*PostOverview, error)
 	CreateComment(postId string, parentCommentId string, postComment *PostComment) (*[]PostComment, error)
 	GetComments(postId string) (*[]PostComment, error)
 	UpvoteComment(postId string, commentId string, userEmail string) (*PostComment, error)
