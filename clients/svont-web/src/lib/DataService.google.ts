@@ -149,8 +149,8 @@ export class DataServiceGoogle implements DataService {
       });
   }
 
-  GetPosts(): Promise<PostOverviewCollection> {
-    return new Promise<PostOverviewCollection>((resolve, reject) => {
+  GetPosts(): Promise<PostOverview[]> {
+    return new Promise<PostOverview[]>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
         fetch(this.defaultServer + "/posts", {
           method: "GET",
@@ -162,7 +162,7 @@ export class DataServiceGoogle implements DataService {
           .then((response) => {
             return response.json();
           })
-          .then((data: PostOverviewCollection) => {
+          .then((data: PostOverview[]) => {
             resolve(data);
           });
       });

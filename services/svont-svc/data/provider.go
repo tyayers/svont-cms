@@ -9,6 +9,7 @@ type PostOverview struct {
 	AuthorDisplayName string   `json:"authorDisplayName"`
 	AuthorProfilePic  string   `json:"authorProfilePic"`
 	Created           string   `json:"created"`
+	Index             int      `json:"index"`
 	Updated           string   `json:"updated"`
 	Upvotes           int      `json:"upvotes"`
 	CommentCount      int      `json:"commentCount"`
@@ -34,8 +35,8 @@ type Post struct {
 }
 
 type Provider interface {
-	Initialize() (map[string]PostOverview, map[int64]string, map[int][]string)
-	Finalize(index_main map[string]PostOverview, index_time map[int64]string, index_populary map[int][]string)
+	Initialize() (map[string]PostOverview, []string, map[int][]string)
+	Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string)
 	GetPost(postId string) *Post
 
 	CreatePost(newPost Post, fileAttachments map[string][]byte) error

@@ -13,14 +13,14 @@ type LocalProvider struct {
 	IndexWriteMutex sync.Mutex
 }
 
-func (provider *LocalProvider) Initialize() (map[string]PostOverview, map[int64]string, map[int][]string) {
+func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, map[int][]string) {
 
 	log.Printf("Initializing Local File data provider.")
 
 	os.Mkdir("./localdata/", os.ModePerm)
 
 	var index_main map[string]PostOverview
-	var index_time map[int64]string
+	var index_time []string
 	var index_popularity map[int][]string
 
 	dat, _ := os.ReadFile("./localdata/index.json")
@@ -28,6 +28,13 @@ func (provider *LocalProvider) Initialize() (map[string]PostOverview, map[int64]
 
 	if index_main == nil {
 		index_main = map[string]PostOverview{}
+	}
+
+	dat, _ = os.ReadFile("./localdata/index_time.json")
+	json.Unmarshal(dat, &index_time)
+
+	if index_time == nil {
+		index_time = []string{}
 	}
 
 	dat, _ = os.ReadFile("./localdata/index_popularity.json")
@@ -39,19 +46,12 @@ func (provider *LocalProvider) Initialize() (map[string]PostOverview, map[int64]
 		index_popularity[0] = []string{}
 	}
 
-	dat, _ = os.ReadFile("./localdata/index_time.json")
-	json.Unmarshal(dat, &index_time)
-
-	if index_time == nil {
-		index_time = map[int64]string{}
-	}
-
 	provider.IndexWriteMutex = sync.Mutex{}
 
 	return index_main, index_time, index_popularity
 }
 
-func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time map[int64]string, index_populary map[int][]string) {
+func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string) {
 	//_, err := os.Create("./localdata/index.json")
 
 	jsonData, _ := json.Marshal(index_main)

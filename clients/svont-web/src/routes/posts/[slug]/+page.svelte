@@ -103,7 +103,7 @@
     justify-content: center;
     display: inline-flex;
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 
   .pannel_left_inner {

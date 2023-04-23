@@ -18,7 +18,7 @@
       <div class="container">
         <div class="panel_left">
           <div class="pannel_left_inner">
-            {#each Object.values(data.posts).reverse() as post}
+            {#each data.posts as post}
               <div>
                 <PostCard {post} />
               </div>
@@ -61,7 +61,7 @@
     justify-content: center;
     display: inline-flex;
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 
   .pannel_left_inner {

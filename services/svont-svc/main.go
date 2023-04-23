@@ -30,10 +30,10 @@ func getPosts(c *gin.Context) {
 
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil {
-		limit = 50
+		limit = 20
 	}
 
-	c.IndentedJSON(http.StatusOK, content.GetAllPosts(start, limit))
+	c.IndentedJSON(http.StatusOK, content.GetPosts(start, limit))
 }
 
 func getPopularPosts(c *gin.Context) {

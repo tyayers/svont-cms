@@ -18,7 +18,7 @@ import (
 
 var postsMutex = sync.Mutex{}
 var index map[string]data.PostOverview
-var index_time map[int64]string
+var index_time []string
 var index_popularity map[int][]string
 
 var searchIndex bleve.Index
@@ -58,8 +58,19 @@ func Finalize() {
 	dataProvider.Finalize(index, index_time, index_popularity)
 }
 
-func GetAllPosts(start int, limit int) map[string]data.PostOverview {
-	return index
+func GetPosts(start int, limit int) []data.PostOverview {
+	resultPosts := []data.PostOverview{}
+
+	if len(index_time) > 0 {
+		postIndex := len(index_time) - 1 - start
+
+		for postIndex >= 0 && len(resultPosts) < limit {
+			resultPosts = append(resultPosts, index[index_time[postIndex]])
+			postIndex--
+		}
+	}
+
+	return resultPosts
 }
 
 func GetPopularPosts(start int, limit int) []data.PostOverview {
@@ -118,8 +129,6 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 
 		bytes, _ := ioutil.ReadAll(src)
 		files[attachment.Filename] = bytes
-		// TODO upload attachments
-		// streamFileUpload("posts/"+newPost.Header.Id+"/"+attachment.Filename, bytes)
 
 		newPost.Files = append(newPost.Files, attachment.Filename)
 	}
@@ -127,18 +136,17 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	newPost.Header.FileCount = len(newPost.Files)
 
 	postsMutex.Lock()
+
+	// Add to time index
+	index_time = append(index_time, newPost.Header.Id)
+	newPost.Header.Index = len(index_time) - 1
+
+	// Add to id index
 	index[newPost.Header.Id] = newPost.Header
+
+	// Add to popularity index
 	index_popularity[0] = append(index_popularity[0], newPost.Header.Id)
 
-	// Add to new popularity spot
-	_, ok := index_time[createTime.UnixNano()]
-	// If the key exists
-	if ok {
-		// ERROR slot with timestamp exists!!
-		index_time[createTime.UnixNano()+1] = newPost.Header.Id
-	} else {
-		index_time[createTime.UnixNano()] = newPost.Header.Id
-	}
 	postsMutex.Unlock()
 
 	err := dataProvider.CreatePost(*newPost, files)
