@@ -5,7 +5,7 @@ import { appService } from "../../lib/DataService";
 
 export const load: PageLoad = (({ params }) => {
   return {
-    posts: appService.GetPosts(),
+    posts: appService.GetPosts(0, 5),
     popular: appService.GetPopularPosts(),
   };
 }) satisfies PageLoad;

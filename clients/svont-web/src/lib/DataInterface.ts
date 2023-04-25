@@ -14,7 +14,7 @@ export interface DataService {
 
   // Posts
   SearchPosts(input: string): Promise<SearchResult[]>;
-  GetPosts(): Promise<PostOverview[]>;
+  GetPosts(start: number, limit: number): Promise<PostOverview[]>;
   GetPopularPosts(): Promise<PostOverview[]>;
   GetPost(postId: string): Promise<Post>;
   CreatePost(postData: FormData): Promise<Post>;

@@ -8,8 +8,20 @@
 
   export let data;
 
-  function scrollEnd(event) {
-    console.log(event)
+  let start: number = 0;
+  let limit: number = 5;
+
+  function scrollCheckEnd(event) {
+    //console.log(event)
+
+    if (event.target.scrollTop >= (event.target.scrollHeight - event.target.clientHeight)) {
+      console.log("scroll end");
+
+      start = start + limit;
+      appService.GetPosts(start, limit).then((result => {
+        data.posts = data.posts.concat(result);
+      }))
+    }
   }
 
 </script>
@@ -20,7 +32,7 @@
   <div class="content">
     {#if data && data.posts}
       <div class="container">
-        <div class="panel_left" on:scroll={scrollEnd}>
+        <div class="panel_left" on:scroll={scrollCheckEnd}>
           <div class="pannel_left_inner">
             {#each data.posts as post}
               <div>
