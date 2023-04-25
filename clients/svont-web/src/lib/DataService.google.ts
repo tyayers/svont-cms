@@ -152,7 +152,7 @@ export class DataServiceGoogle implements DataService {
   GetPosts(): Promise<PostOverview[]> {
     return new Promise<PostOverview[]>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(this.defaultServer + "/posts", {
+        fetch(this.defaultServer + "/posts?start=0&limit=5", {
           method: "GET",
           headers: {
             Accept: "application/json",

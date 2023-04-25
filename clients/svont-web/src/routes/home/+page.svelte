@@ -8,6 +8,10 @@
 
   export let data;
 
+  function scrollEnd(event) {
+    console.log(event)
+  }
+
 </script>
 
 <div>
@@ -16,7 +20,7 @@
   <div class="content">
     {#if data && data.posts}
       <div class="container">
-        <div class="panel_left">
+        <div class="panel_left" on:scroll={scrollEnd}>
           <div class="pannel_left_inner">
             {#each data.posts as post}
               <div>
