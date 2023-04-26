@@ -102,6 +102,10 @@ func (provider *LocalProvider) CreatePost(newPost Post, fileAttachments map[stri
 	jsonData, _ := json.Marshal(newPost)
 	err := os.WriteFile("./localdata/"+newPost.Header.Id+"/post.json", jsonData, 0644)
 
+	for k, v := range fileAttachments {
+		err = os.WriteFile("./localdata/"+newPost.Header.Id+"/" + k, v, 0644)
+	}
+
 	if err != nil {
 		return err
 	} else {
@@ -207,6 +211,17 @@ func (provider *LocalProvider) UpvoteComment(postId string, commentId string, us
 		return nil, err
 	} else {
 		return upvotedComment, nil
+	}
+}
+
+func (provider *LocalProvider) GetFile(postId string, fileName string) ([]byte, error) {
+
+	dat, err := os.ReadFile("./localdata/" + postId + "/" + fileName)
+
+	if err != nil {
+		return nil, err
+	} else {
+		return dat, nil
 	}
 }
 

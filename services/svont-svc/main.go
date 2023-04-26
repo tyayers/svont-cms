@@ -156,6 +156,20 @@ func upvotePost(c *gin.Context) {
 	}
 }
 
+func getFileForPost(c *gin.Context) {
+	postId := c.Param("id")
+	fileName := c.Param("name")
+
+	data, err := content.GetFileForPost(postId, fileName)
+
+	if err != nil {
+		c.String(500, fmt.Sprintf("Could not get file! More info: %s", err.Error()))
+	} else {
+    c.Header("Content-Disposition", "attachment; filename=" + fileName)
+    c.Data(http.StatusOK, "application/octet-stream", data)
+	}
+}
+
 // Add a comment to a post, either at the end or under parentCommentId.
 func addCommentToPost(c *gin.Context) {
 
@@ -356,6 +370,7 @@ func main() {
 	router.PUT("/posts/:id", jwtValidation(), updatePost)
 	router.POST("/posts/:id/upvote", jwtValidation(), upvotePost)
 	router.POST("/posts/:id/files", jwtValidation(), attachFileToPost)
+	router.GET("/posts/:id/files/:name", getFileForPost)
 	router.GET("/posts/:id/comments", getCommentsForPost)
 	router.POST("/posts/:id/comments", jwtValidation(), addCommentToPost)
 	router.POST("/posts/:id/comments/:commentId/upvote", jwtValidation(), upvoteComment)

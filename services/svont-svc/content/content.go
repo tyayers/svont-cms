@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"mime/multipart"
 	"os"
@@ -47,7 +48,9 @@ func Initialize() {
 			searchIndex.Index(v.Id, v)
 		}
 	} else {
+		log.Printf("Loading local bleve index..")
 		searchIndex, err = bleve.Open("posts.bleve")
+		log.Printf("Finished loading local bleve index..")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -278,6 +281,11 @@ func GetComments(postId string) (*[]data.PostComment, error) {
 // Upvotes a specific comment
 func UpvoteComment(postId string, commentId string, userEmail string) (*data.PostComment, error) {
 	return dataProvider.UpvoteComment(postId, commentId, userEmail)
+}
+
+// Gets a file attachment for a post
+func GetFileForPost(postId string, fileName string) ([]byte, error) {
+	return dataProvider.GetFile(postId, fileName)
 }
 
 // Attaches a file to a post

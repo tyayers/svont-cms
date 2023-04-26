@@ -66,7 +66,7 @@
   }
 
   .bylines {
-    margin-left: 10px;
+    margin-left: 1px;
     width: 100%;
     display: flex;
     flex-direction: row;

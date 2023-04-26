@@ -44,5 +44,7 @@ type Provider interface {
 	CreateComment(postId string, parentCommentId string, postComment *PostComment) (*[]PostComment, error)
 	GetComments(postId string) (*[]PostComment, error)
 	UpvoteComment(postId string, commentId string, userEmail string) (*PostComment, error)
+
+	GetFile(postId string, fileName string) ([]byte, error)
 	DeletePost(postId string) error
 }

@@ -1,6 +1,6 @@
-# SVONT - Svelte Content Collaboration
+# Svont CMS - Svelte Management System
 
-Svont (**sv**elte+c**ont**ent) is a simple, feature-rich Content Collaboration System (CCS) using Svelte and a serverless / NODB stack (think serverless Wordpress with Svelte). You can deploy Svont either in an all-in-one container, or distributed across static hosting and a backend service.
+Svont (**sv**elte+c**ont**ent) is a simple, feature-rich CMS using Svelte and a serverless / NODB stack (think serverless Wordpress with Svelte). You can deploy Svont either in an all-in-one container, or distributed across static hosting and a backend service.
 
 ## Live Demo 🎉
 
@@ -10,7 +10,7 @@ Check out a first **[test deployment](https://svont-ccs-test.web.app/)** (using 
 
 You can browse some test posts, as well as sign in with a Google account and post / like / comment.
 
-## Why another CMS/CCS?
+## Why another CMS?
 
 Because most CMS's require a database like MySQL or Postgresql, and so are heavier and more resource intensive to run. Svont aims to be extremely _svelte_, like the framework itself, and run very efficiently using cloud serverless platforms and static hosting services.
 

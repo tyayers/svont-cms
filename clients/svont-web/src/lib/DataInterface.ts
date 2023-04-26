@@ -4,6 +4,7 @@ export interface DataService {
   user: Writable<AppUser>;
   userState: Writable<UserState>;
   appEvents: Writable<AppEvent>;
+  defaultServer: string;
 
   // User
   SignIn(provider: SignInProvider): void;
