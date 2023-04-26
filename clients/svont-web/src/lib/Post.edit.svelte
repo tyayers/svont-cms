@@ -62,6 +62,10 @@
       });
     }
   }
+
+  function init(el){
+    el.focus()
+  }
 </script>
 
 <div class="new-container">
@@ -69,10 +73,10 @@
   <form id="new_post_form">
     <!-- <label for="title">Enter the post title: </label> -->
     {#if post}
-      <input type="text" name="title" id="title" placeholder="Title" required value={post.header.title} />
+      <input type="text" name="title" id="title" placeholder="Title" required value={post.header.title}  use:init />
 
     {:else}
-      <input type="text" name="title" id="title" placeholder="Title" required />
+      <input type="text" name="title" id="title" placeholder="Title" required  use:init />
 
     {/if}
 

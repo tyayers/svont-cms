@@ -20,7 +20,7 @@
     loaded = newStatus;
     if (loaded) {
       //document.getElementById("loading_frame").style.display = "none";
-      editor.focus();
+      //editor.focus();
     }
   }
 </script>
