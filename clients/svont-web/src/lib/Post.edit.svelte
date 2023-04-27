@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Editor, { getData, setData } from "./Editor.CKBBlock.svelte";
+  import TagBox from "./Tag.box.svelte";
   import { appService } from "./DataService";
 
   import type {
@@ -87,6 +88,9 @@
       <Editor />
     </div>
     <br />
+    <div class="tag_frame">
+      <TagBox />
+    </div>
     <div>
       <br />
       <label class="attachlabel" for="files">Attachments:</label>
@@ -122,6 +126,9 @@
 
   .attachlabel {
     margin-left: 10px;
+    color: gray;
+    font-size: 15px;
+    font-weight: 500;
   }
 
   input[type="file"]::file-selector-button {
@@ -138,5 +145,10 @@
     background: #efefef;
     border-color: #b2b2b2;
     color: black;
+  }
+
+  .tag_frame {
+    margin-top: 30px;
+    margin-bottom: 20px;
   }
 </style>
