@@ -3,11 +3,16 @@
 
   export let search: (searchInput: string) => Promise<SearchResult[]>;;
 
+  export let tags: string[] = ["test1", "test2"];
+
   // The results that are returned by searching
   let results: SearchResult[] = [];
 
   // The current search input text
   let searchInput: string = "";
+
+  let displayAddFrame: boolean = false;
+
 
   // Sends the search event to the parent
   function doSearch() {
@@ -45,54 +50,77 @@
 </script>
 
 <div class="container">
-  <div class="search">
-    <div class="box">
-      <input class="input" bind:value={searchInput} on:keyup={doSearch} placeholder="Add tags..." />
-    </div>
+  <div class="tags_header" on:click={() => displayAddFrame=!displayAddFrame}>
+    <span class="add_label">Tags: </span><span class="add_button">+ Add</span>
   </div>
-  {#if results.length > 0}
-    <div class="resultsPanel">
-      <div class="arrow" />
-      <div class="results">
-        <div class="panel">
-          {#each results as res, i}
-            <div
-              class="result"
-              on:click={() => {
-                onClick(res.id, res.title);
-              }}
-            >
-              {@html getHighlight(res.title)}
-            </div>
-          {/each}
+  {#if displayAddFrame}
+    <div class="add_box">
+      <div class="search_box">
+        <div class="input_box">
+          <input class="input" bind:value={searchInput} on:keyup={doSearch} placeholder="Add tags..." />
         </div>
       </div>
+      {#if results.length > 0}
+        <div class="results_box">
+          <div class="arrow" />
+          <div class="results_list">
+            <div class="results_inner_list">
+              {#each results as res, i}
+                <div
+                  class="result"
+                  on:click={() => {
+                    onClick(res.id, res.title);
+                  }}
+                >
+                  {@html getHighlight(res.title)}
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/if}
     </div>
   {/if}
+  <div class="tags_list">
+    {#each tags as tag}
+      <span class="tag"><span class="delete_tag_button">x</span>{tag}</span>
+    {/each}
+  </div>
 </div>
 
 <style>
-  .search {
+  .container {
+    margin-left: 8px;
+  }
+
+  .search_box {
     display: flex;
     width: 240px;
     background: rgba(250, 250, 250, 1);
     border-color: rgba(0,0,0,.15)!important;
     border: 1px solid;
     /* border-radius: 20px; */
-    margin: 0px 5px 10px 8px;
+    margin: 12px 5px 10px 0px;
     font-family: sohne, "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
-  .box {
+  .input_box {
     margin: 0px 12px 0px 12px;
     padding: 4px 0px 0px 0px;
     color: darkgray;
     display: flex;
   }
 
-  .icon {
-    position: relative;
-    top: 3px;
+  .tags_header {
+    font-size: 15px;
+    font-weight: 500;
+    color: gray;
+  }
+
+  .add_button {
+    margin-left: 34px;
+    user-select: none;
+    cursor: pointer;
   }
 
   .input {
@@ -104,15 +132,15 @@
     outline: none;
     border: none;
     color: rgba(41, 41, 41, 1);
-    line-height: 20px;
+    line-height: 14px;
     font-size: 14px;
   }
 
-  .resultsPanel {
+  .results_box {
     position: absolute;
   }
 
-  .results {
+  .results_list {
     position: relative;
     left: 20px;
     top: -10px;
@@ -126,7 +154,7 @@
     border-radius: 4px;
   }
 
-  .panel {
+  .results_inner_list {
     position: relative;
     background: rgb(255, 255, 255);
     width: 100%;
@@ -159,5 +187,28 @@
     padding-left: 10px;
     border-bottom: 1px dashed rgb(242, 242, 242);
     cursor: pointer;
+  }
+
+  .tags_list {
+    margin-top: 14px;
+  }
+
+  .tag {
+    margin-right: 6px;
+    background-color: rgb(231, 231, 231);
+    border-radius: 25px;
+    padding: 4px 12px 4px 4px;
+    font-size: 14px;
+    color: gray;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .delete_tag_button {
+    background-color: darkgray;
+    color: white;
+    border-radius: 50px;
+    padding: 0px 4px 0px 4px;
+    margin-right: 6px;
   }
 </style>
