@@ -187,6 +187,7 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header := index[updatedPost.Header.Id]
 	header.Title = updatedPost.Header.Title
 	header.Summary = updatedPost.Header.Summary
+	header.Tags = updatedPost.Header.Tags
 	header.Updated = updatedPost.Header.Updated
 	index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()

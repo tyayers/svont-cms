@@ -1,9 +1,17 @@
 <script lang="ts">
-  import type { SearchResult } from "./DataInterface";
+  import { createEventDispatcher } from "svelte";
 
-  export let search: (searchInput: string) => Promise<SearchResult[]>;;
+  import { EventType, type SearchResult } from "./DataInterface";
+  import { appService } from "./DataService";
 
-  export let tags: string[] = ["test1", "test2"];
+  // Event dispatcher for all broadcasts to parent
+  const dispatch = createEventDispatcher();
+
+  export let searchTags: (searchInput: string) => Promise<SearchResult[]>;
+  // export let addTag: (tagName: string) => Promise<boolean>;
+  // export let removeTag: (tagName: string) => Promise<boolean>;
+
+  export let tags: string[] = [];
 
   // The results that are returned by searching
   let results: SearchResult[] = [];
@@ -13,19 +21,32 @@
 
   let displayAddFrame: boolean = false;
 
+  appService.appEvents.subscribe((value) => {
+    if (value.type == EventType.Cancel) {
+      results = [];
+      searchInput = "";
+      displayAddFrame = false;
+    }
+  });
 
   // Sends the search event to the parent
-  function doSearch() {
-    console.log("search: " + searchInput);
-    search(searchInput).then((searchResults) => {
-      results = searchResults;
-    });
+  function doSearch(event) {
+    if (event.key == "Escape") {
+      results = [];
+      searchInput = "";
+      displayAddFrame = false;
+    } else {
+      console.log("search: " + searchInput);
+      searchTags(searchInput).then((searchResults) => {
+        results = searchResults;
+      });
+    }
   }
 
   // Sets bold highlighting on the text input string
   function getHighlight(input: string): string {
     let result = "";
-    let pieces = input.split(searchInput);
+    let pieces = input.toLowerCase().split(searchInput.toLowerCase());
 
     for (let i = 0; i < pieces.length; i++) {
       result = result + pieces[i];
@@ -36,28 +57,97 @@
     return result;
   }
 
-  function onClick(id: string, title: string) {
+  function onClick(tagName: string) {
     searchInput = "";
 
-    // dispatch("click", {
-    //   id: id,
-    //   title: title,
+    displayAddFrame = false;
+
+    if (!tags.includes(tagName.toLowerCase())) {
+      let tempTags = tags;
+      tempTags.push(tagName.toLowerCase().replaceAll(",", ""));
+      tags = tempTags;
+    }
+
+    // dispatch("addTag", {
+    //   name: tagName.toLowerCase(),
     // });
 
     results = [];
   }
 
+  function addTagClick() {
+    displayAddFrame = !displayAddFrame;
+  }
+
+  function observeClicks() {}
+
+  function toTitleCase(input: string) {
+    var smallWords =
+      /^(a|an|and|as|at|but|by|en|for|if|in|nor|of|on|or|per|the|to|v.?|vs.?|via)$/i;
+    var alphanumericPattern = /([A-Za-z0-9\u00C0-\u00FF])/;
+    var wordSeparators = /([ :–—-])/;
+
+    return input
+      .split(wordSeparators)
+      .map(function (current, index, array) {
+        if (
+          /* Check for small words */
+          current.search(smallWords) > -1 &&
+          /* Skip first and last word */
+          index !== 0 &&
+          index !== array.length - 1 &&
+          /* Ignore title end and subtitle start */
+          array[index - 3] !== ":" &&
+          array[index + 1] !== ":" &&
+          /* Ignore small words that start a hyphenated phrase */
+          (array[index + 1] !== "-" ||
+            (array[index - 1] === "-" && array[index + 1] === "-"))
+        ) {
+          return current.toLowerCase();
+        }
+
+        /* Ignore intentional capitalization */
+        if (current.substr(1).search(/[A-Z]|\../) > -1) {
+          return current;
+        }
+
+        /* Ignore URLs */
+        if (array[index + 1] === ":" && array[index + 2] !== "") {
+          return current;
+        }
+
+        /* Capitalize the first letter */
+        return current.replace(alphanumericPattern, function (match) {
+          return match.toUpperCase();
+        });
+      })
+      .join("");
+  }
 </script>
 
 <div class="container">
-  <div class="tags_header" on:click={() => displayAddFrame=!displayAddFrame}>
-    <span class="add_label">Tags: </span><span class="add_button">+ Add</span>
+  <div class="tags_header">
+    <span class="add_label">Tags:</span>
+    <span class="tags_list">
+      {#each tags as tag}
+        <span class="tag"
+          ><span class="delete_tag_button">x</span>{toTitleCase(tag)}</span
+        >
+      {/each}
+    </span>
   </div>
   {#if displayAddFrame}
-    <div class="add_box">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="add_box" on:click|stopPropagation={observeClicks}>
       <div class="search_box">
         <div class="input_box">
-          <input class="input" bind:value={searchInput} on:keyup={doSearch} placeholder="Add tags..." />
+          <input
+            class="input"
+            bind:value={searchInput}
+            on:keyup|stopPropagation={doSearch}
+            placeholder="Add tags..."
+            autofocus
+          />
         </div>
       </div>
       {#if results.length > 0}
@@ -66,10 +156,11 @@
           <div class="results_list">
             <div class="results_inner_list">
               {#each results as res, i}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <div
                   class="result"
                   on:click={() => {
-                    onClick(res.id, res.title);
+                    onClick(res.title);
                   }}
                 >
                   {@html getHighlight(res.title)}
@@ -80,24 +171,26 @@
         </div>
       {/if}
     </div>
+  {:else}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="add_button" on:click|stopPropagation={addTagClick}>+ Add</div>
   {/if}
-  <div class="tags_list">
-    {#each tags as tag}
-      <span class="tag"><span class="delete_tag_button">x</span>{tag}</span>
-    {/each}
-  </div>
 </div>
 
 <style>
   .container {
     margin-left: 8px;
+
+    font-size: 15px;
+    font-weight: 500;
+    color: gray;
   }
 
   .search_box {
     display: flex;
     width: 240px;
     background: rgba(250, 250, 250, 1);
-    border-color: rgba(0,0,0,.15)!important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
     border: 1px solid;
     /* border-radius: 20px; */
     margin: 12px 5px 10px 0px;
@@ -111,14 +204,8 @@
     display: flex;
   }
 
-  .tags_header {
-    font-size: 15px;
-    font-weight: 500;
-    color: gray;
-  }
-
   .add_button {
-    margin-left: 34px;
+    margin-top: 10px;
     user-select: none;
     cursor: pointer;
   }
@@ -187,6 +274,7 @@
     padding-left: 10px;
     border-bottom: 1px dashed rgb(242, 242, 242);
     cursor: pointer;
+    text-transform: capitalize;
   }
 
   .tags_list {
@@ -202,6 +290,8 @@
     color: gray;
     user-select: none;
     cursor: pointer;
+    /* text-transform: capitalize;
+    display: inline-block; */
   }
 
   .delete_tag_button {

@@ -4,10 +4,8 @@
   import TagBox from "./Tag.box.svelte";
   import { appService } from "./DataService";
 
-  import type {
-    Post,
-    AppUser,
-  } from "./DataInterface";
+  import type { Post, AppUser, SearchResult } from "./DataInterface";
+  import { append } from "svelte/internal";
 
   let localUser: AppUser = undefined;
 
@@ -16,12 +14,12 @@
   });
 
   export let post: Post = undefined;
+  let tags: string[] = [];
 
   if (post) {
     setData(post.content);
-  }
-  else
-    setData("")
+    tags = post.header.tags;
+  } else setData("");
 
   export function submit() {
     var myForm: HTMLFormElement = document.getElementById(
@@ -46,26 +44,34 @@
     // Set summary
     //formData.set("summary", text.substring(0, 200) + "...");
     formData.set("summary", summaryText);
+    formData.set("tags", tags.toString());
 
     if (post) {
       appService.UpdatePost(post.header.id, formData).then((post: Post) => {
         goto("/home");
-      })
-    }
-    else {
+      });
+    } else {
       // Set user for new post
       formData.set("authorId", localUser.uid);
       formData.set("authorDisplayName", localUser.displayName);
       formData.set("authorProfilePic", localUser.photoURL);
-      
+
       appService.CreatePost(formData).then((post: Post) => {
         goto("/home");
       });
     }
   }
 
-  function init(el){
-    el.focus()
+  function init(el) {
+    el.focus();
+  }
+
+  function searchTags(searchInput: string): Promise<SearchResult[]> {
+    return appService.SearchTags(searchInput);
+  }
+
+  function addTag(event) {
+    tags.push(event.detail.name);
   }
 </script>
 
@@ -74,11 +80,24 @@
   <form id="new_post_form">
     <!-- <label for="title">Enter the post title: </label> -->
     {#if post}
-      <input type="text" name="title" id="title" placeholder="Title" required value={post.header.title}  use:init />
-
+      <input
+        type="text"
+        name="title"
+        id="title"
+        placeholder="Title"
+        required
+        value={post.header.title}
+        use:init
+      />
     {:else}
-      <input type="text" name="title" id="title" placeholder="Title" required  use:init />
-
+      <input
+        type="text"
+        name="title"
+        id="title"
+        placeholder="Title"
+        required
+        use:init
+      />
     {/if}
 
     <div>
@@ -89,7 +108,7 @@
     </div>
     <br />
     <div class="tag_frame">
-      <TagBox />
+      <TagBox {searchTags} {tags} on:addTag={addTag} />
     </div>
     <div>
       <br />

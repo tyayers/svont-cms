@@ -419,6 +419,28 @@ export class DataServiceGoogle implements DataService {
     });
   }
 
+  SearchTags(input: string): Promise<SearchResult[]> {
+    return new Promise<SearchResult[]>((resolve, reject) => {
+      if (input) {
+        this.GetIdToken().then((idToken) => {
+          fetch(this.defaultServer + "/posts/search?q=" + input, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              Authorization: "Bearer " + idToken,
+            },
+          })
+            .then((response) => {
+              return response.json();
+            })
+            .then((data: SearchResult[]) => {
+              resolve(data);
+            });
+        });
+      } else resolve([]);
+    });
+  }
+
   addComment(
     comments: PostComment[],
     parentCommentId: string,

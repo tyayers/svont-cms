@@ -84,6 +84,8 @@ func createPost(c *gin.Context) {
 			newPost.Header.AuthorDisplayName = value[0]
 		case "authorProfilePic":
 			newPost.Header.AuthorProfilePic = value[0]
+		case "tags":
+			newPost.Header.Tags = strings.Split(value[0], ",")
 		default:
 			fmt.Println("No handler found for form item " + key)
 		}
@@ -131,6 +133,8 @@ func updatePost(c *gin.Context) {
 				updatedPost.Content = value[0]
 			case "summary":
 				updatedPost.Header.Summary = value[0]
+			case "tags":
+				updatedPost.Header.Tags = strings.Split(value[0], ",")
 			default:
 				fmt.Println("No handler found for form item " + key)
 			}
@@ -165,8 +169,8 @@ func getFileForPost(c *gin.Context) {
 	if err != nil {
 		c.String(500, fmt.Sprintf("Could not get file! More info: %s", err.Error()))
 	} else {
-    c.Header("Content-Disposition", "attachment; filename=" + fileName)
-    c.Data(http.StatusOK, "application/octet-stream", data)
+		c.Header("Content-Disposition", "attachment; filename="+fileName)
+		c.Data(http.StatusOK, "application/octet-stream", data)
 	}
 }
 

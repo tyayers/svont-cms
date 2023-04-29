@@ -1,9 +1,9 @@
 <script lang="ts">
   import Header from "../../lib/Header.svelte";
   import PostCard from "../../lib/Post.card.svelte";
-  import PostPopularWidget from "../../lib/Post.popular.svelte"
+  import PostPopularWidget from "../../lib/Post.popular.svelte";
 
-  import {appService} from "$lib/DataService"
+  import { appService } from "$lib/DataService";
   import type { PostOverviewCollection } from "$lib/DataInterface";
 
   export let data;
@@ -12,18 +12,20 @@
   let limit: number = 5;
 
   function scrollCheckEnd(event) {
-    //console.log(event)
+    console.log(event);
 
-    if (event.target.scrollTop >= (event.target.scrollHeight - event.target.clientHeight)) {
+    if (
+      event.target.scrollTop >=
+      event.target.scrollHeight - event.target.clientHeight
+    ) {
       console.log("scroll end");
 
       start = start + limit;
-      appService.GetPosts(start, limit).then((result => {
+      appService.GetPosts(start, limit).then((result) => {
         data.posts = data.posts.concat(result);
-      }))
+      });
     }
   }
-
 </script>
 
 <div>
@@ -31,17 +33,15 @@
 
   <div class="content">
     {#if data && data.posts}
-      <div class="container">
-        <div class="panel_left" on:scroll={scrollCheckEnd}>
+      <div class="container" on:scroll={scrollCheckEnd}>
+        <div class="panel_left">
           <div class="pannel_left_inner">
             {#each data.posts as post}
               <div>
                 <PostCard {post} />
               </div>
             {/each}
-            <div class="pannel_left_footer">
-              
-            </div>
+            <div class="pannel_left_footer" />
           </div>
         </div>
         <div class="panel_right">
@@ -59,9 +59,9 @@
     max-width: 1336px;
     text-align: left;
     margin: auto;
-    height: 100%;
+    /* height: 100%;
     height: calc(100vh - 58px);
-    overflow-y: hidden;
+    overflow-y: hidden; */
   }
 
   .container {
@@ -69,6 +69,8 @@
     justify-content: space-evenly;
     flex-direction: row;
     height: 100%;
+    height: calc(100vh - 58px);
+    overflow-y: auto;
   }
 
   .panel_left {
@@ -76,8 +78,8 @@
     flex: 1 1 auto;
     justify-content: center;
     display: inline-flex;
-    height: 100%;
-    overflow-y: auto;
+    /* height: 100%;
+    overflow-y: auto; */
   }
 
   .pannel_left_inner {
@@ -95,6 +97,8 @@
     border-left: 1px solid rgba(242, 242, 242, 1);
     padding-left: 32px;
     min-width: 420px;
+    position: sticky;
+    top: 0px;
   }
 
   .widget1 {
