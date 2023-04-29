@@ -28,12 +28,12 @@
   }
 </script>
 
-<div>
+<div class="page_box" on:scroll={scrollCheckEnd}>
   <Header />
 
   <div class="content">
     {#if data && data.posts}
-      <div class="container" on:scroll={scrollCheckEnd}>
+      <div class="container">
         <div class="panel_left">
           <div class="pannel_left_inner">
             {#each data.posts as post}
@@ -55,6 +55,11 @@
 </div>
 
 <style>
+  .page_box {
+    height: calc(100vh);
+    overflow-y: auto;
+  }
+
   .content {
     max-width: 1336px;
     text-align: left;
@@ -68,9 +73,9 @@
     display: flex;
     justify-content: space-evenly;
     flex-direction: row;
-    height: 100%;
+    /*
     height: calc(100vh - 58px);
-    overflow-y: auto;
+    overflow-y: auto; */
   }
 
   .panel_left {
@@ -89,16 +94,21 @@
   }
 
   .pannel_left_footer {
-    height: 24px;
+    height: 84px;
   }
 
   .panel_right {
-    min-height: 100vh;
+    /* min-height: 100vh; */
+
     border-left: 1px solid rgba(242, 242, 242, 1);
     padding-left: 32px;
     min-width: 420px;
+
+    /* uncomment below to make right panel sticky
+    height: calc(100vh - 58px);
     position: sticky;
-    top: 0px;
+    top: 58px;
+    overflow-y: auto; */
   }
 
   .widget1 {

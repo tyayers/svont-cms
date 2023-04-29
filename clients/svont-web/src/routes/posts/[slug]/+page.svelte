@@ -48,7 +48,7 @@
   }
 </script>
 
-<div>
+<div class="page_box">
   <Header />
 
   <div class="content">
@@ -140,6 +140,11 @@
 </div>
 
 <style>
+  .page_box {
+    height: calc(100vh);
+    overflow-y: auto;
+  }
+
   .content {
     max-width: 1336px;
     text-align: left;
@@ -153,9 +158,9 @@
     display: flex;
     justify-content: space-evenly;
     flex-direction: row;
-    height: 100%;
+    /*
     height: calc(100vh - 58px);
-    overflow-y: auto;
+    overflow-y: auto; */
   }
 
   .panel_left {
@@ -178,16 +183,21 @@
   }
 
   .panel_right {
-    min-height: 100vh;
+    /* min-height: 100vh; */
+
     border-left: 1px solid rgba(242, 242, 242, 1);
     padding-left: 32px;
     min-width: 420px;
+
+    /* uncomment below to make right panel sticky
+    height: calc(100vh - 58px);
     position: sticky;
-    top: 0px;
+    top: 58px;
+    overflow-y: auto; */
   }
 
   .widget1 {
-    height: 100%;
+    /* height: 100%; */
     width: 100%;
   }
 
