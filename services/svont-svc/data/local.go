@@ -13,7 +13,7 @@ type LocalProvider struct {
 	IndexWriteMutex sync.Mutex
 }
 
-func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, map[int][]string) {
+func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, map[int][]string, map[string]map[int]string) {
 
 	log.Printf("Initializing Local File data provider.")
 
@@ -22,6 +22,7 @@ func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, 
 	var index_main map[string]PostOverview
 	var index_time []string
 	var index_popularity map[int][]string
+	var index_tags map[string]map[int]string
 
 	dat, _ := os.ReadFile("./localdata/index.json")
 	json.Unmarshal(dat, &index_main)
@@ -46,12 +47,19 @@ func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, 
 		index_popularity[0] = []string{}
 	}
 
+	dat, _ = os.ReadFile("./localdata/index_tags.json")
+	json.Unmarshal(dat, &index_tags)
+
+	if index_tags == nil {
+		index_tags = map[string]map[int]string{}
+	}
+
 	provider.IndexWriteMutex = sync.Mutex{}
 
-	return index_main, index_time, index_popularity
+	return index_main, index_time, index_popularity, index_tags
 }
 
-func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string) {
+func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string, index_tags map[string]map[int]string) {
 	//_, err := os.Create("./localdata/index.json")
 
 	jsonData, _ := json.Marshal(index_main)
@@ -80,6 +88,15 @@ func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, inde
 	} else {
 		fmt.Printf("Successfully wrote popularity index.")
 	}
+
+	jsonData, _ = json.Marshal(index_tags)
+	err = os.WriteFile("./localdata/index_tags.json", jsonData, 0644)
+
+	if err != nil {
+		fmt.Printf("Could not write tag index: %s", err)
+	} else {
+		fmt.Printf("Successfully wrote tag index.")
+	}
 }
 
 // Returns the post specified by postId.
@@ -103,7 +120,7 @@ func (provider *LocalProvider) CreatePost(newPost Post, fileAttachments map[stri
 	err := os.WriteFile("./localdata/"+newPost.Header.Id+"/post.json", jsonData, 0644)
 
 	for k, v := range fileAttachments {
-		err = os.WriteFile("./localdata/"+newPost.Header.Id+"/" + k, v, 0644)
+		err = os.WriteFile("./localdata/"+newPost.Header.Id+"/"+k, v, 0644)
 	}
 
 	if err != nil {

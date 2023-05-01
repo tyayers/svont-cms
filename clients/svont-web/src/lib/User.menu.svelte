@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
-  import {appService} from "./DataService"
+  import { appService } from "./DataService";
   import { type AppUser, type AppEvent, EventType } from "./DataInterface";
 
   export let user: AppUser;
@@ -11,8 +11,7 @@
   let menuVisible: boolean = false;
 
   appService.appEvents.subscribe((value) => {
-    if (value.type == EventType.Cancel )
-      menuVisible = false;
+    if (value.type == EventType.Cancel) menuVisible = false;
   });
 
   function signOut() {
@@ -22,12 +21,13 @@
 
 {#if user}
   <img
-    on:click|stopPropagation={() => (menuVisible = !menuVisible)} on:keydown|stopPropagation={() => (menuVisible = !menuVisible)}
+    on:click|stopPropagation={() => (menuVisible = !menuVisible)}
+    on:keydown|stopPropagation={() => (menuVisible = !menuVisible)}
     src={user.photoURL}
     alt="The user."
     class="profilebutton"
     referrerpolicy="no-referrer"
-  >
+  />
 {/if}
 
 {#if menuVisible}
@@ -52,16 +52,16 @@
   .menuPanel {
     position: absolute;
     top: 45px;
-    right: -125px;
+    /* right: -125px; */
   }
 
   .menu {
     position: relative;
-    left: -120px;
+    left: -14px;
     top: -10px;
     max-height: 200px;
     width: 160px;
-    overflow-y: scroll;
+    overflow-y: auto;
     border-radius: 3px;
     background: rgb(255, 255, 255);
     box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 10px 0px;
@@ -83,7 +83,7 @@
   .arrow {
     position: relative;
     top: -22px;
-    left: 10px;
+    left: 104px;
     z-index: 1;
     border: 1px solid rgb(242, 242, 242);
     box-shadow: rgba(0, 0, 0, 0.15) -1px -1px 1px -1px;

@@ -87,7 +87,7 @@
         placeholder="Title"
         required
         value={post.header.title}
-        use:init
+        autofocus
       />
     {:else}
       <input
@@ -96,7 +96,7 @@
         id="title"
         placeholder="Title"
         required
-        use:init
+        autofocus
       />
     {/if}
 

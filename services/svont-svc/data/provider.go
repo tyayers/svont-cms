@@ -35,10 +35,10 @@ type Post struct {
 }
 
 type Provider interface {
-	Initialize() (map[string]PostOverview, []string, map[int][]string)
-	Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string)
-	GetPost(postId string) *Post
+	Initialize() (map[string]PostOverview, []string, map[int][]string, map[string]map[int]string)
+	Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string, index_tags map[string]map[int]string)
 
+	GetPost(postId string) *Post
 	CreatePost(newPost Post, fileAttachments map[string][]byte) error
 	UpdatePost(post Post, fileAttachments map[string][]byte) error
 	CreateComment(postId string, parentCommentId string, postComment *PostComment) (*[]PostComment, error)

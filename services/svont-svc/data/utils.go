@@ -15,7 +15,7 @@ func AddCommentToParent(comments *[]PostComment, parentCommentId string, newComm
 			return true
 		} else if len((*comments)[i].Children) > 0 {
 			result := AddCommentToParent(&(*comments)[i].Children, parentCommentId, newComment)
-			if result { 
+			if result {
 				return result
 			}
 		}
@@ -34,7 +34,7 @@ func UpvoteComment(comments *[]PostComment, commentId string) *PostComment {
 			return &(*comments)[i]
 		} else if len((*comments)[i].Children) > 0 {
 			result := UpvoteComment(&(*comments)[i].Children, commentId)
-			if result != nil { 
+			if result != nil {
 				return result
 			}
 		}

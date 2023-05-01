@@ -21,6 +21,7 @@ var postsMutex = sync.Mutex{}
 var index map[string]data.PostOverview
 var index_time []string
 var index_popularity map[int][]string
+var index_tags map[string]map[int]string
 
 var searchIndex bleve.Index
 
@@ -31,7 +32,7 @@ var dataProvider data.Provider = &data.LocalProvider{}
 // var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize() {
-	index, index_time, index_popularity = dataProvider.Initialize()
+	index, index_time, index_popularity, index_tags = dataProvider.Initialize()
 
 	// Initialize bleve search index, if it doesn't exist
 	if _, err := os.Stat("./posts.bleve"); os.IsNotExist(err) {
@@ -58,7 +59,7 @@ func Initialize() {
 }
 
 func Finalize() {
-	dataProvider.Finalize(index, index_time, index_popularity)
+	dataProvider.Finalize(index, index_time, index_popularity, index_tags)
 }
 
 func GetPosts(start int, limit int) []data.PostOverview {
@@ -150,6 +151,20 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	// Add to popularity index
 	index_popularity[0] = append(index_popularity[0], newPost.Header.Id)
 
+	// Add to tag index
+	if newPost.Header.Tags != nil {
+		for _, tag := range newPost.Header.Tags {
+
+			// val, ok := index_tags[tag]
+			// // If the key exists
+			// if ok {
+			index_tags[tag][newPost.Header.Index] = newPost.Header.Id
+			// } else {
+			// 	index_tags[tag] = map[int]string{}
+			// }
+		}
+	}
+
 	postsMutex.Unlock()
 
 	err := dataProvider.CreatePost(*newPost, files)
@@ -187,7 +202,10 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header := index[updatedPost.Header.Id]
 	header.Title = updatedPost.Header.Title
 	header.Summary = updatedPost.Header.Summary
+
+	UpdateTags(updatedPost.Header.Id, updatedPost.Header.Index, header.Tags, updatedPost.Header.Tags)
 	header.Tags = updatedPost.Header.Tags
+
 	header.Updated = updatedPost.Header.Updated
 	index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
@@ -339,6 +357,55 @@ func SearchPosts(text string) ([]data.PostOverview, error) {
 		return nil, errors.New("search index is nil!")
 	}
 
+}
+
+func UpdateTags(postId string, postIndex int, originalTagList []string, newTagList []string) {
+	tagsToRemove, tagsToAdd := GetUpdatedTags(originalTagList, newTagList)
+
+	for _, removeTag := range tagsToRemove {
+		val, ok := index_tags[removeTag]
+		// If the key exists
+		if ok {
+			delete(val, postIndex)
+		} else {
+			// Log error
+		}
+	}
+
+	for _, addTag := range tagsToAdd {
+		index_tags[addTag][postIndex] = postId
+	}
+}
+
+func GetUpdatedTags(originalTagList []string, newTagList []string) ([]string, []string) {
+	tagsToRemove := []string{}
+	tagsToAdd := []string{}
+
+	for _, origTag := range originalTagList {
+		if !ArrayContains(newTagList, origTag) {
+			// Orig tag no longer in tag list
+			tagsToRemove = append(tagsToRemove, origTag)
+		}
+	}
+
+	for _, newTag := range newTagList {
+		if !ArrayContains(originalTagList, newTag) {
+			// Orig tag no longer in tag list
+			tagsToAdd = append(tagsToAdd, newTag)
+		}
+	}
+
+	return tagsToRemove, tagsToAdd
+}
+
+func ArrayContains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyz" +
