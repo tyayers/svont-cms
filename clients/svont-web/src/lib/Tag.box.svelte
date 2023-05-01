@@ -35,6 +35,8 @@
       results = [];
       searchInput = "";
       displayAddFrame = false;
+    } else if (event.key == "Enter") {
+      onClick(searchInput);
     } else {
       console.log("search: " + searchInput);
       searchTags(searchInput).then((searchResults) => {
@@ -73,6 +75,14 @@
     // });
 
     results = [];
+  }
+
+  function removeTag(tagName: string) {
+    if (tags.includes(tagName.toLowerCase())) {
+      let tempTags = tags;
+      tempTags = tempTags.filter((e) => e !== tagName.toLowerCase());
+      tags = tempTags;
+    }
   }
 
   function addTagClick() {
@@ -130,8 +140,12 @@
     <span class="add_label">Tags:</span>
     <span class="tags_list">
       {#each tags as tag}
-        <span class="tag"
-          ><span class="delete_tag_button">x</span>{toTitleCase(tag)}</span
+        <span class="tag">
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <span
+            class="delete_tag_button"
+            on:click|stopPropagation={() => removeTag(tag)}>x</span
+          >{toTitleCase(tag)}</span
         >
       {/each}
     </span>

@@ -155,13 +155,15 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	if newPost.Header.Tags != nil {
 		for _, tag := range newPost.Header.Tags {
 
-			// val, ok := index_tags[tag]
-			// // If the key exists
-			// if ok {
-			index_tags[tag][newPost.Header.Index] = newPost.Header.Id
-			// } else {
-			// 	index_tags[tag] = map[int]string{}
-			// }
+			if tag != "" {
+				_, ok := index_tags[tag]
+
+				if !ok {
+					index_tags[tag] = map[int]string{}
+				}
+
+				index_tags[tag][newPost.Header.Index] = newPost.Header.Id
+			}
 		}
 	}
 
@@ -203,7 +205,7 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header.Title = updatedPost.Header.Title
 	header.Summary = updatedPost.Header.Summary
 
-	UpdateTags(updatedPost.Header.Id, updatedPost.Header.Index, header.Tags, updatedPost.Header.Tags)
+	UpdateTags(header.Id, header.Index, header.Tags, updatedPost.Header.Tags)
 	header.Tags = updatedPost.Header.Tags
 
 	header.Updated = updatedPost.Header.Updated
@@ -373,7 +375,15 @@ func UpdateTags(postId string, postIndex int, originalTagList []string, newTagLi
 	}
 
 	for _, addTag := range tagsToAdd {
-		index_tags[addTag][postIndex] = postId
+		if addTag != "" {
+			_, ok := index_tags[addTag]
+
+			if !ok {
+				index_tags[addTag] = map[int]string{}
+			}
+
+			index_tags[addTag][postIndex] = postId
+		}
 	}
 }
 

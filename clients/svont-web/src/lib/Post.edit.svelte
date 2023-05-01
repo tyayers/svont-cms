@@ -108,7 +108,7 @@
     </div>
     <br />
     <div class="tag_frame">
-      <TagBox {searchTags} {tags} on:addTag={addTag} />
+      <TagBox {searchTags} bind:tags on:addTag={addTag} />
     </div>
     <div>
       <br />
