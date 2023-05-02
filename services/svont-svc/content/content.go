@@ -106,6 +106,37 @@ func GetPopularPosts(start int, limit int) []data.PostOverview {
 	return postsByPopularity
 }
 
+func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
+	taggedPosts := []data.PostOverview{}
+
+	posts, ok := index_tags[tagName]
+
+	if ok {
+		keys := make([]int, 0, len(posts))
+		for k := range posts {
+			keys = append(keys, k)
+		}
+
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] > keys[j]
+		})
+
+		for _, v := range keys {
+			post, ok := index[posts[v]]
+
+			if ok {
+				taggedPosts = append(taggedPosts, post)
+			}
+
+			if len(taggedPosts) >= limit {
+				break
+			}
+		}
+	}
+
+	return taggedPosts
+}
+
 func GetPost(postId string) *data.Post {
 	var post = dataProvider.GetPost(postId)
 	post.Header = index[postId]

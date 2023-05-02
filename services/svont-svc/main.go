@@ -50,6 +50,22 @@ func getPopularPosts(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, content.GetPopularPosts(start, limit))
 }
 
+func getTaggedPosts(c *gin.Context) {
+	tagName := c.Param("name")
+
+	start, err := strconv.Atoi(c.Query("start"))
+	if err != nil {
+		start = 0
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit"))
+	if err != nil {
+		limit = 10
+	}
+
+	c.IndentedJSON(http.StatusOK, content.GetTaggedPosts(tagName, start, limit))
+}
+
 func getPost(c *gin.Context) {
 	postId := c.Param("id")
 
@@ -379,6 +395,8 @@ func main() {
 	router.POST("/posts/:id/comments", jwtValidation(), addCommentToPost)
 	router.POST("/posts/:id/comments/:commentId/upvote", jwtValidation(), upvoteComment)
 	router.DELETE("/posts/:id", jwtValidation(), deletePost)
+
+	router.GET("/tags/:name", getTaggedPosts)
 
 	router.Run("0.0.0.0:8080")
 }

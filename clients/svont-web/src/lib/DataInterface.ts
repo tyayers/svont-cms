@@ -18,6 +18,11 @@ export interface DataService {
   SearchTags(input: string): Promise<SearchResult[]>;
   GetPosts(start: number, limit: number): Promise<PostOverview[]>;
   GetPopularPosts(): Promise<PostOverview[]>;
+  GetTaggedPosts(
+    tagName: string,
+    start: number,
+    limit: number
+  ): Promise<PostOverview[]>;
   GetPost(postId: string): Promise<Post>;
   CreatePost(postData: FormData): Promise<Post>;
   UpdatePost(postId: string, postData: FormData): Promise<Post>;

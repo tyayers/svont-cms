@@ -66,7 +66,7 @@
                 {#if data.post.header.tags && data.post.header.tags.length > 0}
                   Tags:
                   {#each data.post.header.tags as tag}
-                    {tag}
+                    <a href={"/tags/" + tag}>{tag}</a>
                   {/each}
                 {/if}
               </div>

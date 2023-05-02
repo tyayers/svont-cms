@@ -169,6 +169,33 @@ export class DataServiceGoogle implements DataService {
     });
   }
 
+  GetTaggedPosts(
+    tagName: string,
+    start: number,
+    limit: number
+  ): Promise<PostOverview[]> {
+    return new Promise<PostOverview[]>((resolve, reject) => {
+      this.GetIdToken().then((idToken) => {
+        fetch(
+          this.defaultServer + `/tags/${tagName}?start=${start}&limit=${limit}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              Authorization: "Bearer " + idToken,
+            },
+          }
+        )
+          .then((response) => {
+            return response.json();
+          })
+          .then((data: PostOverview[]) => {
+            resolve(data);
+          });
+      });
+    });
+  }
+
   GetPopularPosts(): Promise<PostOverview[]> {
     return new Promise<PostOverview[]>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
