@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
 
   import type { PostOverview } from "./DataInterface";
+  import { ToTitleCase } from "./DataInterface";
 
   export let post: PostOverview = undefined;
 
@@ -32,13 +33,23 @@
           </div>
         </div>
         <div class="content">
-          <!-- <Link to="/posts/{id}" -->
           <h2 class="title">{post.title}</h2>
           <div>
             {post.summary}
           </div>
-          <!--/Link> -->
           <br />
+          {#if post.tags && post.tags.length > 0}
+            <div class="tags_box">
+              Tags:
+              {#each post.tags as tag}
+                {#if tag}
+                  <a class="tag" href={"/tags/" + tag} title={ToTitleCase(tag)}
+                    >{ToTitleCase(tag)}</a
+                  >
+                {/if}
+              {/each}
+            </div>
+          {/if}
           <span class="footer"
             >{post.upvotes} Likes - {post.commentCount} Comments - {post.fileCount}
             Attachments</span
@@ -87,6 +98,28 @@
 
   .title {
     text-decoration: none;
+  }
+
+  .tags_box {
+    /* margin-left: 23px; */
+    /* margin-top: 44px; */
+    margin-bottom: 18px;
+    font-size: 15px;
+    font-weight: 500;
+    color: gray;
+  }
+
+  .tag {
+    margin-right: 6px;
+    background-color: rgb(231, 231, 231);
+    border-radius: 25px;
+    padding: 4px 10px 4px 10px;
+    font-size: 14px;
+    color: gray;
+    user-select: none;
+    cursor: pointer;
+    /* text-transform: capitalize;
+    display: inline-block; */
   }
 
   .footer {

@@ -40,6 +40,7 @@
               <div>
                 <PostCard {post} />
               </div>
+              <hr class="post_divider" />
             {/each}
             <div class="pannel_left_footer" />
           </div>
@@ -91,6 +92,13 @@
     max-width: 728px;
     width: 100%;
     padding-bottom: 54px;
+  }
+
+  .post_divider {
+    border-top: 1px solid rgba(242, 242, 242, 1);
+    margin-left: 24px;
+    margin-right: 24px;
+    border-bottom: 0px;
   }
 
   .pannel_left_footer {

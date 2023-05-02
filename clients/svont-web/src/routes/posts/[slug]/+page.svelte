@@ -10,6 +10,9 @@
     Post,
     PostComment,
   } from "../../../lib/DataInterface";
+
+  import { ToTitleCase } from "../../../lib/DataInterface";
+
   import { appService } from "$lib/DataService";
 
   export let data;
@@ -66,7 +69,10 @@
                 {#if data.post.header.tags && data.post.header.tags.length > 0}
                   Tags:
                   {#each data.post.header.tags as tag}
-                    <a href={"/tags/" + tag}>{tag}</a>
+                    {#if tag}
+                      <a class="tag" href={"/tags/" + tag}>{ToTitleCase(tag)}</a
+                      >
+                    {/if}
                   {/each}
                 {/if}
               </div>
@@ -217,10 +223,23 @@
 
   .tags_box {
     margin-left: 23px;
-
+    margin-top: 44px;
     font-size: 15px;
     font-weight: 500;
     color: gray;
+  }
+
+  .tag {
+    margin-right: 6px;
+    background-color: rgb(231, 231, 231);
+    border-radius: 25px;
+    padding: 4px 10px 4px 10px;
+    font-size: 14px;
+    color: gray;
+    user-select: none;
+    cursor: pointer;
+    /* text-transform: capitalize;
+    display: inline-block; */
   }
 
   .post-comments {
