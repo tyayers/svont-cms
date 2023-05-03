@@ -34,6 +34,12 @@ type Post struct {
 	Files   []string     `json:"files"`
 }
 
+type SearchResult struct {
+	Id    string `json:"id"`
+	Title string `json:"title"`
+	Count int    `json:"count"`
+}
+
 type Provider interface {
 	Initialize() (map[string]PostOverview, []string, map[int][]string, map[string]map[int]string)
 	Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string, index_tags map[string]map[int]string)

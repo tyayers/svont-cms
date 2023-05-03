@@ -450,7 +450,7 @@ export class DataServiceGoogle implements DataService {
     return new Promise<SearchResult[]>((resolve, reject) => {
       if (input) {
         this.GetIdToken().then((idToken) => {
-          fetch(this.defaultServer + "/posts/search?q=" + input, {
+          fetch(this.defaultServer + "/tags/search?q=" + input, {
             method: "GET",
             headers: {
               Accept: "application/json",

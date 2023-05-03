@@ -22,7 +22,7 @@
       console.log("scroll end");
 
       start = start + limit;
-      appService.GetPosts(start, limit).then((result) => {
+      appService.GetTaggedPosts(data.tagName, start, limit).then((result) => {
         data.posts = data.posts.concat(result);
       });
     }

@@ -36,27 +36,34 @@
       searchInput = "";
       displayAddFrame = false;
     } else if (event.key == "Enter") {
-      onClick(searchInput);
+      onClick(searchInput.toLowerCase());
     } else {
       console.log("search: " + searchInput);
-      searchTags(searchInput).then((searchResults) => {
+      searchTags(searchInput.toLowerCase()).then((searchResults) => {
         results = searchResults;
       });
     }
   }
 
   // Sets bold highlighting on the text input string
-  function getHighlight(input: string): string {
+  function getHighlight(input: string, count: number): string {
     let result = "";
     let pieces = input.toLowerCase().split(searchInput.toLowerCase());
 
     for (let i = 0; i < pieces.length; i++) {
       result = result + pieces[i];
-      if (i != pieces.length - 1)
-        result = result + "<b>" + searchInput + "</b>";
+
+      if (i != pieces.length - 1) {
+        // result = result + "<b>" + searchInput + "</b>";
+        result = result + "" + searchInput + "";
+      }
     }
 
-    return result;
+    if (count) {
+      result = result + " (" + count + ")";
+    }
+
+    return ToTitleCase(result);
   }
 
   function onClick(tagName: string) {
@@ -134,7 +141,7 @@
                     onClick(res.title);
                   }}
                 >
-                  {@html getHighlight(res.title)}
+                  {@html getHighlight(res.title, res.count)}
                 </div>
               {/each}
             </div>
@@ -200,11 +207,12 @@
 
   .results_list {
     position: relative;
-    left: 20px;
+    left: 0px;
     top: -10px;
     max-height: 200px;
-    width: 316px;
-    overflow-y: scroll;
+    width: 252px;
+    overflow-y: auto;
+    overflow-x: auto;
     border-radius: 3px;
     background: rgb(255, 255, 255);
     box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 10px 0px;
@@ -226,7 +234,7 @@
   .arrow {
     position: relative;
     top: -22px;
-    left: 52px;
+    left: 32px;
     z-index: 1;
     border: 1px solid rgb(242, 242, 242);
     box-shadow: rgba(0, 0, 0, 0.15) -1px -1px 1px -1px;
@@ -245,7 +253,6 @@
     padding-left: 10px;
     border-bottom: 1px dashed rgb(242, 242, 242);
     cursor: pointer;
-    text-transform: capitalize;
   }
 
   .tags_list {

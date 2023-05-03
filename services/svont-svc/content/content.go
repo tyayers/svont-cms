@@ -24,6 +24,7 @@ var index_popularity map[int][]string
 var index_tags map[string]map[int]string
 
 var searchIndex bleve.Index
+var tagIndex bleve.Index
 
 // Local data provider, uncomment to test locally with files (in localdata dir)
 var dataProvider data.Provider = &data.LocalProvider{}
@@ -52,6 +53,29 @@ func Initialize() {
 		log.Printf("Loading local bleve index..")
 		searchIndex, err = bleve.Open("posts.bleve")
 		log.Printf("Finished loading local bleve index..")
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// Initialize bleve tag index, if it doesn't exist
+	if _, err := os.Stat("./tags.bleve"); os.IsNotExist(err) {
+		// Initialize bleve
+		mapping := bleve.NewIndexMapping()
+		var err error
+		tagIndex, err = bleve.New("tags.bleve", mapping)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		for k, _ := range index_tags {
+			fmt.Printf("indexing key[%s] value[%s]\n", k, k)
+			tagIndex.Index(k, k)
+		}
+	} else {
+		log.Printf("Loading local bleve tag index..")
+		tagIndex, err = bleve.Open("tags.bleve")
+		log.Printf("Finished loading local bleve tag index..")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -121,17 +145,27 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
 			return keys[i] > keys[j]
 		})
 
-		for _, v := range keys {
-			post, ok := index[posts[v]]
-
+		postIndex := start
+		for postIndex < len(keys) && len(taggedPosts) < limit {
+			post, ok := index[posts[keys[postIndex]]]
 			if ok {
 				taggedPosts = append(taggedPosts, post)
 			}
 
-			if len(taggedPosts) >= limit {
-				break
-			}
+			postIndex++
 		}
+
+		// for _, v := range keys {
+		// 	post, ok := index[posts[v]]
+
+		// 	if ok {
+		// 		taggedPosts = append(taggedPosts, post)
+		// 	}
+
+		// 	if len(taggedPosts) >= limit {
+		// 		break
+		// 	}
+		// }
 	}
 
 	return taggedPosts
@@ -191,6 +225,7 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 
 				if !ok {
 					index_tags[tag] = map[int]string{}
+					tagIndex.Index(tag, tag)
 				}
 
 				index_tags[tag][newPost.Header.Index] = newPost.Header.Id
@@ -392,6 +427,45 @@ func SearchPosts(text string) ([]data.PostOverview, error) {
 
 }
 
+func SearchTags(text string) ([]data.SearchResult, error) {
+	query := bleve.NewMatchQuery(text)
+	query.Fuzziness = 2
+
+	query2 := bleve.NewPrefixQuery(text)
+
+	query3 := bleve.NewDisjunctionQuery(query, query2)
+
+	//query := bleve.NewFuzzyQuery(text)
+	search := bleve.NewSearchRequest(query3)
+
+	if tagIndex != nil {
+		searchResults, err := tagIndex.Search(search)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		} else {
+			results := []data.SearchResult{}
+			fmt.Println(searchResults)
+			for _, val := range searchResults.Hits {
+				tag, ok := index_tags[val.ID]
+				if ok {
+					newTagResult := data.SearchResult{
+						Id:    val.ID,
+						Title: val.ID,
+						Count: len(tag),
+					}
+
+					results = append(results, newTagResult)
+				}
+			}
+
+			return results, nil
+		}
+	} else {
+		return nil, errors.New("tag search index is nil!")
+	}
+}
+
 func UpdateTags(postId string, postIndex int, originalTagList []string, newTagList []string) {
 	tagsToRemove, tagsToAdd := GetUpdatedTags(originalTagList, newTagList)
 
@@ -411,6 +485,7 @@ func UpdateTags(postId string, postIndex int, originalTagList []string, newTagLi
 
 			if !ok {
 				index_tags[addTag] = map[int]string{}
+				tagIndex.Index(addTag, addTag)
 			}
 
 			index_tags[addTag][postIndex] = postId

@@ -66,6 +66,19 @@ func getTaggedPosts(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, content.GetTaggedPosts(tagName, start, limit))
 }
 
+// Search tags
+func searchTags(c *gin.Context) {
+	text := c.Query("q")
+
+	res, err := content.SearchTags(text)
+
+	if err == nil {
+		c.IndentedJSON(http.StatusOK, res)
+	} else {
+		c.String(500, fmt.Sprintf("Error: %s", err))
+	}
+}
+
 func getPost(c *gin.Context) {
 	postId := c.Param("id")
 
@@ -397,6 +410,7 @@ func main() {
 	router.DELETE("/posts/:id", jwtValidation(), deletePost)
 
 	router.GET("/tags/:name", getTaggedPosts)
+	router.GET("/tags/search", searchTags)
 
 	router.Run("0.0.0.0:8080")
 }

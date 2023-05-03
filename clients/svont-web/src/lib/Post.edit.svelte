@@ -18,7 +18,8 @@
 
   if (post) {
     setData(post.content);
-    tags = post.header.tags;
+    if (post.header.tags && post.header.tags.length > 0)
+      tags = post.header.tags;
   } else setData("");
 
   export function submit() {
