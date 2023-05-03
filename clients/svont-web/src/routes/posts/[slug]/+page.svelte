@@ -218,6 +218,7 @@
     max-width: 680px;
     margin: 0 24px;
     min-width: 0px;
+    overflow-x: auto;
     /* width: 100%; */
   }
 

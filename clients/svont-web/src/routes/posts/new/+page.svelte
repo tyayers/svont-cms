@@ -14,15 +14,19 @@
 </script>
 
 <div class="newpost">
-  <Header small={true} actionType={HeaderButton.Submit} on:submit={submitClick} />
+  <Header
+    small={true}
+    actionType={HeaderButton.Submit}
+    on:submit={submitClick}
+  />
 
   <PostNew bind:this={form} />
 </div>
 
 <style>
-.newpost {
-  width: 100vw;
-  height: 100vh;
-}
+  .newpost {
+    width: 100vw;
+    height: 100vh;
+    overflow-x: auto;
+  }
 </style>
-

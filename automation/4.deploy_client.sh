@@ -1,7 +1,8 @@
 cd ../clients/svont-web
 
-echo "Replace variables in the client code..."
-sed -i "/VITE_CMS_SERVICE=/c\VITE_CMS_SERVICE=$CLOUD_RUN_URL" .env.production
+echo "Set environment variables..."
+#sed -i "/VITE_CMS_SERVICE=/c\VITE_CMS_SERVICE=$CLOUD_RUN_URL" .env.production
+echo "VITE_CMS_SERVICE=$CLOUD_RUN_URL" > .env.production
 
 echo "Building client..."
 npm install
