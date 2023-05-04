@@ -27,17 +27,18 @@ var searchIndex bleve.Index
 var tagIndex bleve.Index
 
 // Local data provider, uncomment to test locally with files (in localdata dir)
-var dataProvider data.Provider = &data.LocalProvider{}
+// var dataProvider data.Provider = &data.LocalProvider{}
 
 // Google Cloud Storage provider, uncomment to use GCS as storage provider
-// var dataProvider data.Provider = &data.GCSProvider{}
+var dataProvider data.Provider = &data.GCSProvider{}
 
-func Initialize() {
+func Initialize(force bool) {
 	index, index_time, index_popularity, index_tags = dataProvider.Initialize()
 
 	// Initialize bleve search index, if it doesn't exist
-	if _, err := os.Stat("./posts.bleve"); os.IsNotExist(err) {
+	if _, err := os.Stat("./posts.bleve"); os.IsNotExist(err) || force {
 		// Initialize bleve
+		os.RemoveAll("./posts.bleve")
 		mapping := bleve.NewIndexMapping()
 		var err error
 		searchIndex, err = bleve.New("posts.bleve", mapping)
@@ -59,8 +60,9 @@ func Initialize() {
 	}
 
 	// Initialize bleve tag index, if it doesn't exist
-	if _, err := os.Stat("./tags.bleve"); os.IsNotExist(err) {
+	if _, err := os.Stat("./tags.bleve"); os.IsNotExist(err) || force {
 		// Initialize bleve
+		os.RemoveAll("./tags.bleve")
 		mapping := bleve.NewIndexMapping()
 		var err error
 		tagIndex, err = bleve.New("tags.bleve", mapping)
@@ -154,18 +156,6 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
 
 			postIndex++
 		}
-
-		// for _, v := range keys {
-		// 	post, ok := index[posts[v]]
-
-		// 	if ok {
-		// 		taggedPosts = append(taggedPosts, post)
-		// 	}
-
-		// 	if len(taggedPosts) >= limit {
-		// 		break
-		// 	}
-		// }
 	}
 
 	return taggedPosts
@@ -402,9 +392,13 @@ func DeletePost(postId string) error {
 
 // Searches posts
 func SearchPosts(text string) ([]data.PostOverview, error) {
-	//query := bleve.NewMatchQuery(text)
-	query := bleve.NewFuzzyQuery(text)
-	search := bleve.NewSearchRequest(query)
+	query := bleve.NewMatchQuery(text)
+	query.Fuzziness = 2
+
+	query2 := bleve.NewPrefixQuery(text)
+
+	query3 := bleve.NewDisjunctionQuery(query, query2)
+	search := bleve.NewSearchRequest(query3)
 
 	if searchIndex != nil {
 		searchResults, err := searchIndex.Search(search)

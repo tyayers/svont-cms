@@ -35,7 +35,7 @@
         <div class="content">
           <h2 class="title">{post.title}</h2>
           <div>
-            {post.summary}
+            {@html post.summary}
           </div>
           <br />
           {#if post.tags && post.tags.length > 0}

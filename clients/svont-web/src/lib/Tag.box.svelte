@@ -202,7 +202,7 @@
   }
 
   .results_box {
-    position: absolute;
+    /* position: absolute; */
   }
 
   .results_list {

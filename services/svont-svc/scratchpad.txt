@@ -10,4 +10,5 @@ curl -X POST http://localhost:8080/posts/oJnNPGsi/files \
   -F "file=@./examples/file.png" \
   -H "Content-Type: multipart/form-data"
 
-  
+# Force reinit of data
+curl -X POST http://localhost:8080/admin/reload

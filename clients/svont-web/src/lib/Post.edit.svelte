@@ -134,6 +134,7 @@
     text-align: left;
     margin: auto;
     margin-top: 20px;
+    margin-bottom: 148px;
     padding: 0px 24px 0px 24px;
   }
 

@@ -59,7 +59,7 @@ func (provider *LocalProvider) Initialize() (map[string]PostOverview, []string, 
 	return index_main, index_time, index_popularity, index_tags
 }
 
-func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string, index_tags map[string]map[int]string) {
+func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, index_time []string, index_popularity map[int][]string, index_tags map[string]map[int]string) {
 	//_, err := os.Create("./localdata/index.json")
 
 	jsonData, _ := json.Marshal(index_main)
@@ -80,7 +80,7 @@ func (provider *LocalProvider) Finalize(index_main map[string]PostOverview, inde
 		fmt.Printf("Successfully wrote time index.")
 	}
 
-	jsonData, _ = json.Marshal(index_populary)
+	jsonData, _ = json.Marshal(index_popularity)
 	err = os.WriteFile("./localdata/index_popularity.json", jsonData, 0644)
 
 	if err != nil {

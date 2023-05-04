@@ -22,6 +22,16 @@ import (
 
 var app *firebase.App
 
+func reload(c *gin.Context) {
+	content.Initialize(true)
+	c.String(200, "Reload successful.")
+}
+
+func persist(c *gin.Context) {
+	content.Finalize()
+	c.String(200, "Persist successful.")
+}
+
 func getPosts(c *gin.Context) {
 	start, err := strconv.Atoi(c.Query("start"))
 	if err != nil {
@@ -366,7 +376,7 @@ func jwtValidation() gin.HandlerFunc {
 
 func main() {
 
-	content.Initialize()
+	content.Initialize(false)
 
 	app, _ = firebase.NewApp(context.Background(), nil)
 
@@ -411,6 +421,9 @@ func main() {
 
 	router.GET("/tags/:name", getTaggedPosts)
 	router.GET("/tags/search", searchTags)
+
+	router.POST("/admin/reload", reload)
+	router.POST("/admin/persist", persist)
 
 	router.Run("0.0.0.0:8080")
 }
