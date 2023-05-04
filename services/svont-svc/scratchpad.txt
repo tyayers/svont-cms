@@ -12,3 +12,6 @@ curl -X POST http://localhost:8080/posts/oJnNPGsi/files \
 
 # Force reinit of data
 curl -X POST http://localhost:8080/admin/reload
+
+# Force persist of data
+curl -X POST http://localhost:8080/admin/persist

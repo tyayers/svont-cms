@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 
 type GCSProvider struct {
 	IndexWriteMutex sync.Mutex
+	BucketName      string
+	BucketPath      string
 }
 
 // Initialize loads persisted data structures from storage, if available
@@ -25,12 +28,15 @@ func (provider *GCSProvider) Initialize() (map[string]PostOverview, []string, ma
 
 	log.Printf("Initializing Google Cloud Storage data provider.")
 
+	provider.BucketName = os.Getenv("BUCKET_NAME")
+	provider.BucketPath = os.Getenv("BUCKET_PATH")
+
 	var index_main map[string]PostOverview
 	var index_time []string
 	var index_popularity map[int][]string
 	var index_tags map[string]map[int]string
 
-	postBytes, err := downloadFileIntoMemory("posts/index.json")
+	postBytes, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index_main)
@@ -40,7 +46,7 @@ func (provider *GCSProvider) Initialize() (map[string]PostOverview, []string, ma
 		index_main = map[string]PostOverview{}
 	}
 
-	postBytes, err = downloadFileIntoMemory("posts/index_time.json")
+	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_time.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index_time)
@@ -50,7 +56,7 @@ func (provider *GCSProvider) Initialize() (map[string]PostOverview, []string, ma
 		index_time = []string{}
 	}
 
-	postBytes, err = downloadFileIntoMemory("posts/index_popularity.json")
+	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_popularity.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index_popularity)
@@ -61,7 +67,7 @@ func (provider *GCSProvider) Initialize() (map[string]PostOverview, []string, ma
 		index_popularity[0] = []string{}
 	}
 
-	postBytes, err = downloadFileIntoMemory("posts/index_tags.json")
+	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_tags.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index_tags)
@@ -86,7 +92,7 @@ func (provider *GCSProvider) Finalize(index_main map[string]PostOverview, index_
 		return
 	}
 
-	streamFileUpload("posts/index.json", jsonData)
+	streamFileUpload(provider.BucketName, provider.BucketPath+"index.json", jsonData)
 
 	jsonData, err = json.Marshal(index_time)
 	if err != nil {
@@ -94,7 +100,7 @@ func (provider *GCSProvider) Finalize(index_main map[string]PostOverview, index_
 		return
 	}
 
-	streamFileUpload("posts/index_time.json", jsonData)
+	streamFileUpload(provider.BucketName, provider.BucketPath+"index_time.json", jsonData)
 
 	jsonData, err = json.Marshal(index_popularity)
 	if err != nil {
@@ -102,7 +108,7 @@ func (provider *GCSProvider) Finalize(index_main map[string]PostOverview, index_
 		return
 	}
 
-	streamFileUpload("posts/index_popularity.json", jsonData)
+	streamFileUpload(provider.BucketName, provider.BucketPath+"index_popularity.json", jsonData)
 
 	jsonData, err = json.Marshal(index_tags)
 	if err != nil {
@@ -110,13 +116,13 @@ func (provider *GCSProvider) Finalize(index_main map[string]PostOverview, index_
 		return
 	}
 
-	streamFileUpload("posts/index_tags.json", jsonData)
+	streamFileUpload(provider.BucketName, provider.BucketPath+"index_tags.json", jsonData)
 }
 
 // Returns the post specified by postId.
 func (provider *GCSProvider) GetPost(postId string) *Post {
 
-	dat, _ := downloadFileIntoMemory("posts/" + postId + "/post.json")
+	dat, _ := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+postId+"/post.json")
 
 	var post Post
 	json.Unmarshal(dat, &post)
@@ -128,10 +134,10 @@ func (provider *GCSProvider) GetPost(postId string) *Post {
 func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string][]byte) error {
 
 	jsonData, _ := json.Marshal(newPost)
-	err := streamFileUpload("posts/"+newPost.Header.Id+"/post.json", jsonData)
+	err := streamFileUpload(provider.BucketName, provider.BucketPath+newPost.Header.Id+"/post.json", jsonData)
 
 	for k, v := range fileAttachments {
-		err = streamFileUpload("posts/"+newPost.Header.Id+"/"+k, v)
+		err = streamFileUpload(provider.BucketName, provider.BucketPath+newPost.Header.Id+"/"+k, v)
 	}
 
 	if err != nil {
@@ -145,7 +151,7 @@ func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string
 func (provider *GCSProvider) UpdatePost(post Post, fileAttachments map[string][]byte) error {
 
 	jsonData, _ := json.Marshal(post)
-	err := streamFileUpload("posts/"+post.Header.Id+"/post.json", jsonData)
+	err := streamFileUpload(provider.BucketName, provider.BucketPath+post.Header.Id+"/post.json", jsonData)
 
 	if err != nil {
 		return err
@@ -160,7 +166,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
+	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+postId+"/comments.json")
 
 	if err != nil {
 		postComments = *new([]PostComment)
@@ -184,7 +190,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 	}
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload("posts/"+postId+"/comments.json", jsonData)
+	err = streamFileUpload(provider.BucketName, provider.BucketPath+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -197,7 +203,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 func (provider *GCSProvider) GetComments(postId string) (*[]PostComment, error) {
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
+	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+postId+"/comments.json")
 
 	if err != nil {
 		postComments = *new([]PostComment)
@@ -218,7 +224,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory("posts/" + postId + "/comments.json")
+	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+postId+"/comments.json")
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Comments for post %s not found!", postId))
@@ -233,7 +239,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 	upvotedComment := UpvoteComment(&postComments, commentId)
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload("posts/"+postId+"/comments.json", jsonData)
+	err = streamFileUpload(provider.BucketName, provider.BucketPath+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -245,7 +251,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 // Gets the file
 func (provider *GCSProvider) GetFile(postId string, fileName string) ([]byte, error) {
 
-	dat, err := downloadFileIntoMemory("posts/" + postId + "/" + fileName)
+	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+postId+"/"+fileName)
 
 	if err != nil {
 		return nil, err
@@ -257,7 +263,7 @@ func (provider *GCSProvider) GetFile(postId string, fileName string) ([]byte, er
 // Deletes the post identified by postId
 func (provider *GCSProvider) DeletePost(postId string) error {
 
-	err := deleteObject("posts/" + postId)
+	err := deleteObject(provider.BucketName, provider.BucketPath+postId)
 	if err != nil {
 		fmt.Printf("could not delete post %s: %s\n", postId, err)
 		return err
@@ -266,7 +272,7 @@ func (provider *GCSProvider) DeletePost(postId string) error {
 	}
 }
 
-func streamFileUpload(name string, content []byte) error {
+func streamFileUpload(bucketName string, name string, content []byte) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -280,7 +286,7 @@ func streamFileUpload(name string, content []byte) error {
 	defer cancel()
 
 	// Upload an object with storage.Writer.
-	wc := client.Bucket("cms_tg6qp4dq8").Object(name).NewWriter(ctx)
+	wc := client.Bucket(bucketName).Object(name).NewWriter(ctx)
 	wc.ChunkSize = 0 // note retries are not supported for chunk size 0.
 
 	if _, err = io.Copy(wc, buf); err != nil {
@@ -294,7 +300,7 @@ func streamFileUpload(name string, content []byte) error {
 	return nil
 }
 
-func downloadFileIntoMemory(object string) ([]byte, error) {
+func downloadFileIntoMemory(bucketName string, object string) ([]byte, error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -305,7 +311,7 @@ func downloadFileIntoMemory(object string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
-	rc, err := client.Bucket("cms_tg6qp4dq8").Object(object).NewReader(ctx)
+	rc, err := client.Bucket(bucketName).Object(object).NewReader(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Object(%q).NewReader: %v", object, err)
 	}
@@ -318,7 +324,7 @@ func downloadFileIntoMemory(object string) ([]byte, error) {
 	return data, nil
 }
 
-func deleteObject(name string) error {
+func deleteObject(bucketName string, name string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -329,7 +335,7 @@ func deleteObject(name string) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	b := client.Bucket("cms_tg6qp4dq8")
+	b := client.Bucket(bucketName)
 
 	query := &storage.Query{Prefix: name}
 	var names []string
@@ -345,21 +351,13 @@ func deleteObject(name string) error {
 		names = append(names, attrs.Name)
 		fmt.Printf("found blob " + attrs.Name)
 
-		o := client.Bucket("cms_tg6qp4dq8").Object(attrs.Name)
+		o := client.Bucket(bucketName).Object(attrs.Name)
 		if err := o.Delete(ctx); err != nil {
 			return fmt.Errorf("Object(%q).Delete: %v", name, err)
 		}
 
 		fmt.Printf("Blob %v deleted.\n", name)
 	}
-
-	// blobs := b.Objects(name)
-	// o := client.Bucket("cms_tg6qp4dq8").Object(name)
-
-	// if err := o.Delete(ctx); err != nil {
-	// 	return fmt.Errorf("Object(%q).Delete: %v", name, err)
-	// }
-	// fmt.Fprintf(w, "Blob %v deleted.\n", name)
 
 	return nil
 }

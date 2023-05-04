@@ -207,13 +207,6 @@
     width: 100%;
   }
 
-  .post-content {
-    max-width: 728px;
-    flex: 1 1 auto;
-    justify-content: center;
-    margin: 0px 24px;
-  }
-
   .post-article {
     max-width: 680px;
     margin: 0 24px;
@@ -222,8 +215,15 @@
     /* width: 100%; */
   }
 
+  .post-content {
+    max-width: 728px;
+    flex: 1 1 auto;
+    justify-content: center;
+    /* margin: 0px 24px; */
+  }
+
   .tags_box {
-    margin-left: 23px;
+    /* margin-left: 23px; */
     margin-top: 44px;
     font-size: 15px;
     font-weight: 500;
@@ -245,7 +245,7 @@
 
   .post-comments {
     max-width: 680px;
-    margin-left: 24px;
+    /* margin-left: 24px; */
     margin-right: 24px;
     margin-top: 40px;
     min-width: 0px;

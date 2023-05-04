@@ -104,13 +104,15 @@
     <span class="add_label">Tags:</span>
     <span class="tags_list">
       {#each tags as tag}
-        <span class="tag">
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <span
-            class="delete_tag_button"
-            on:click|stopPropagation={() => removeTag(tag)}>x</span
-          >{ToTitleCase(tag)}</span
-        >
+        {#if tag}
+          <span class="tag">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <span
+              class="delete_tag_button"
+              on:click|stopPropagation={() => removeTag(tag)}>x</span
+            >{ToTitleCase(tag)}</span
+          >
+        {/if}
       {/each}
     </span>
   </div>
