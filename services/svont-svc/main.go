@@ -102,10 +102,11 @@ func createPost(c *gin.Context) {
 	var files []multipart.FileHeader
 
 	form, _ := c.MultipartForm()
-	attachments := form.File["files"]
 
-	for _, file := range attachments {
-		files = append(files, *file)
+	if form != nil && form.File != nil && form.File["files"] != nil {
+		for _, file := range form.File["files"] {
+			files = append(files, *file)
+		}
 	}
 
 	for key, value := range c.Request.PostForm {
@@ -157,10 +158,10 @@ func updatePost(c *gin.Context) {
 		var files []multipart.FileHeader
 
 		form, _ := c.MultipartForm()
-		attachments := form.File["files"]
-
-		for _, file := range attachments {
-			files = append(files, *file)
+		if form != nil && form.File != nil && form.File["files"] != nil {
+			for _, file := range form.File["files"] {
+				files = append(files, *file)
+			}
 		}
 
 		for key, value := range c.Request.PostForm {

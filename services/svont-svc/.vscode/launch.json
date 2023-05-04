@@ -11,7 +11,9 @@
       "mode": "auto",
       "program": "${fileDirname}",
       "env": {
-        "GCLOUD_PROJECT": "cloud32x"
+        "GCLOUD_PROJECT": "cloud32x",
+        "BUCKET_NAME": "cms_tg6qp4dq8",
+        "BUCKET_PATH": "posts2/"
       }
     }
   ]

@@ -21,6 +21,6 @@ echo "Set BUCKET_PATH to $BUCKET_PATH"
 export FIREBASE_NAME=svont-ccs-test
 echo "Set FIREBASE_NAME to $BUCKET_NAME"
 
-# export CLOUD_RUN_URL=https://cms2-service-ghfontasua-ew.a.run.app
-export CLOUD_RUN_URL=https://cms-service-ghfontasua-ew.a.run.app
+export CLOUD_RUN_URL=https://cms2-service-ghfontasua-ew.a.run.app
+export CLOUD_RUN_URL=https://cms2-service-ghfontasua-ew.a.run.app
 echo "Set CLOUD_RUN_URL to $CLOUD_RUN_URL"

@@ -3,7 +3,7 @@
 #
 
 localdata
-posts.bleve
+*.bleve
 
 # Binaries for programs and plugins
 *.exe
