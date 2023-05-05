@@ -1,4 +1,8 @@
 <script lang="ts" context="module">
+  // import { BalloonBlockEditor, SimpleUploadAdapter } from "./ckeditor";
+
+  // import SimpleUploadAdapter from "@ckeditor/ckeditor5-upload/src/adapters/simpleuploadadapter";
+
   let editor;
   let initialData;
   let loaded: boolean = false;
@@ -33,6 +37,10 @@
   function initCkeditor() {
     BalloonBlockEditor.create(document.querySelector("#content"), {
       placeholder: "Add your content here...",
+      simpleUpload: {
+        uploadUrl: "http://localhost:8080/posts",
+        withCredentials: false,
+      },
     }).then((newEditor) => {
       editor = newEditor;
       setLoadedStatus(true);
