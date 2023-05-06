@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -126,6 +125,8 @@ func createPost(c *gin.Context) {
 			newPost.Header.AuthorProfilePic = value[0]
 		case "tags":
 			newPost.Header.Tags = strings.Split(value[0], ",")
+		case "draft":
+			newPost.Header.Draft, _ = strconv.ParseBool(value[0])
 		default:
 			fmt.Println("No handler found for form item " + key)
 		}
@@ -286,27 +287,37 @@ func attachFileToPost(c *gin.Context) {
 	postId := c.Param("id")
 	user_id := c.GetString("user_id")
 
-	post := content.GetPostOverview(postId)
+	post := content.GetPost(postId)
 
-	if post.AuthorId != user_id {
-		c.String(401, fmt.Sprintf("User not authorized to delete post."))
+	if post.Header.AuthorId != user_id {
+		c.String(401, fmt.Sprintf("User not authorized to update post."))
 	} else {
-		file, err := c.FormFile("file")
-		// The file cannot be received.
+		file, err := c.FormFile("upload")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"message": "No file is received",
 			})
 			return
 		}
-		src, _ := file.Open()
-		defer src.Close()
 
-		byteContainer, err := ioutil.ReadAll(src)
+		var files []multipart.FileHeader
+		files = append(files, *file)
 
-		content.AttachFileToPost(postId, file.Filename, byteContainer)
+		content.UpdatePost(post, files)
+		// src, _ := file.Open()
+		// defer src.Close()
 
-		c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
+		// byteContainer, err := ioutil.ReadAll(src)
+
+		// content.AttachFileToPost(postId, file.Filename, byteContainer)
+		url := "https://"
+		if strings.HasPrefix(c.Request.Host, "localhost") {
+			url = "http://"
+		}
+
+		imageUploadResult := data.ImageUploadResult{Url: url + c.Request.Host + "/posts/" + postId + "/files/" + file.Filename}
+		c.IndentedJSON(http.StatusCreated, imageUploadResult)
+		//c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
 	}
 }
 
@@ -432,7 +443,7 @@ func main() {
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Header("Access-Control-Allow-Methods", "POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE")

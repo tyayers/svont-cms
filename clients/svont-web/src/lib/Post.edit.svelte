@@ -20,7 +20,19 @@
     setData(post.content);
     if (post.header.tags && post.header.tags.length > 0)
       tags = post.header.tags;
-  } else setData("");
+  } else {
+    setData("");
+    const formData = new FormData();
+    formData.set("authorId", localUser.uid);
+    formData.set("authorDisplayName", localUser.displayName);
+    formData.set("authorProfilePic", localUser.photoURL);
+    // Mark as draft
+    formData.set("draft", "true");
+
+    appService.CreatePost(formData).then((newPost: Post) => {
+      post = newPost;
+    });
+  }
 
   export function submit() {
     var myForm: HTMLFormElement = document.getElementById(
@@ -48,6 +60,7 @@
     formData.set("tags", tags.toString());
 
     if (post) {
+      formData.set("draft", "false");
       appService.UpdatePost(post.header.id, formData).then((post: Post) => {
         goto("/home");
       });
@@ -102,10 +115,10 @@
     {/if}
 
     <div>
-      <!-- <label for="content">Enter the post content: </label><br/> -->
-      <!-- <textarea name="content" id="content" class="post_content"></textarea> -->
       <br />
-      <Editor />
+      {#if post}
+        <Editor imageUploadPath={"/posts/" + post.header.id + "/files"} />
+      {/if}
     </div>
     <br />
     <div class="tag_frame">

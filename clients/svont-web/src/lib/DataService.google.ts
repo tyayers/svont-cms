@@ -106,6 +106,10 @@ export class DataServiceGoogle implements DataService {
     return this.localUserState;
   }
 
+  GetServer(type: string): string {
+    return this.defaultServer;
+  }
+
   Navigate(path: string): void {
     if (browser) goto(path);
   }
@@ -252,7 +256,7 @@ export class DataServiceGoogle implements DataService {
               return response.json();
             })
             .then((data) => {
-              this.Navigate("/");
+              resolve(data);
             });
         })
         .catch((error) => {

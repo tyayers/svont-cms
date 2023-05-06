@@ -1,8 +1,4 @@
 <script lang="ts" context="module">
-  // import { BalloonBlockEditor, SimpleUploadAdapter } from "./ckeditor";
-
-  // import SimpleUploadAdapter from "@ckeditor/ckeditor5-upload/src/adapters/simpleuploadadapter";
-
   let editor;
   let initialData;
   let loaded: boolean = false;
@@ -32,23 +28,33 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
+
+  import { appService } from "./DataService";
+
+  export let imageUploadPath: string = "";
+
   // import "../assets/ckeditor"
 
   function initCkeditor() {
-    BalloonBlockEditor.create(document.querySelector("#content"), {
-      placeholder: "Add your content here...",
-      simpleUpload: {
-        uploadUrl: "http://localhost:8080/posts",
-        withCredentials: false,
-      },
-    }).then((newEditor) => {
-      editor = newEditor;
-      setLoadedStatus(true);
-      if (initialData) {
-        console.log("Setting loaded to true in editor create");
+    appService.GetIdToken().then((token) => {
+      BalloonBlockEditor.create(document.querySelector("#content"), {
+        placeholder: "Add your content here...",
+        simpleUpload: {
+          uploadUrl: appService.GetServer("IMAGE") + imageUploadPath,
+          withCredentials: true,
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        },
+      }).then((newEditor) => {
+        editor = newEditor;
         setLoadedStatus(true);
-        editor.setData(initialData);
-      }
+        if (initialData) {
+          console.log("Setting loaded to true in editor create");
+          setLoadedStatus(true);
+          editor.setData(initialData);
+        }
+      });
     });
   }
 

@@ -4,6 +4,7 @@ type PostOverview struct {
 	Id                string   `json:"id"`
 	Title             string   `json:"title"`
 	Summary           string   `json:"summary"`
+	Draft             bool     `json:"draft"`
 	Tags              []string `json:"tags"`
 	AuthorId          string   `json:"authorId"`
 	AuthorDisplayName string   `json:"authorDisplayName"`
@@ -38,6 +39,10 @@ type SearchResult struct {
 	Id    string `json:"id"`
 	Title string `json:"title"`
 	Count int    `json:"count"`
+}
+
+type ImageUploadResult struct {
+	Url string `json:"url"`
 }
 
 type Provider interface {

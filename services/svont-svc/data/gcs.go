@@ -153,6 +153,10 @@ func (provider *GCSProvider) UpdatePost(post Post, fileAttachments map[string][]
 	jsonData, _ := json.Marshal(post)
 	err := streamFileUpload(provider.BucketName, provider.BucketPath+post.Header.Id+"/post.json", jsonData)
 
+	for k, v := range fileAttachments {
+		err = streamFileUpload(provider.BucketName, provider.BucketPath+post.Header.Id+"/"+k, v)
+	}
+
 	if err != nil {
 		return err
 	} else {

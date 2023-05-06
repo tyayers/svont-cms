@@ -27,6 +27,7 @@ export interface DataService {
   CreatePost(postData: FormData): Promise<Post>;
   UpdatePost(postId: string, postData: FormData): Promise<Post>;
   DeletePost(postId: string): Promise<boolean>;
+  GetServer(type: string): string;
 
   // Upvotes
   UpVote(postId: string, user: AppUser): Promise<PostOverview>;
@@ -72,6 +73,7 @@ export type PostOverview = {
   id: string;
   title: string;
   summary: string;
+  draft: boolean;
   authorId: string;
   authorDisplayName: string;
   authorProfilePic: string;

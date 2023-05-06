@@ -365,20 +365,6 @@ func GetFileForPost(postId string, fileName string) ([]byte, error) {
 	return dataProvider.GetFile(postId, fileName)
 }
 
-// Attaches a file to a post
-func AttachFileToPost(postId string, fileName string, file []byte) {
-
-	// postBytes, _ := downloadFileIntoMemory("posts/" + postId + "/post.json")
-	// var updatedPost data.Post
-	// json.Unmarshal(postBytes, &updatedPost)
-
-	// streamFileUpload("posts/"+postId+"/"+fileName, file)
-
-	// updatedPost.Files = append(updatedPost.Files, fileName)
-	// jsonData, _ := json.Marshal(updatedPost)
-	// streamFileUpload("posts/"+updatedPost.Header.Id+"/post.json", jsonData)
-}
-
 // Deletes a post
 func DeletePost(postId string) error {
 
