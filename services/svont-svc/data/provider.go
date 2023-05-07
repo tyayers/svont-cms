@@ -4,6 +4,7 @@ type PostOverview struct {
 	Id                string   `json:"id"`
 	Title             string   `json:"title"`
 	Summary           string   `json:"summary"`
+	Image             string   `json:"image"`
 	Draft             bool     `json:"draft"`
 	Tags              []string `json:"tags"`
 	AuthorId          string   `json:"authorId"`

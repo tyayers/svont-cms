@@ -57,7 +57,8 @@
     // Set summary
     //formData.set("summary", text.substring(0, 200) + "...");
     formData.set("summary", summaryText);
-    formData.set("tags", tags.toString());
+    let tempTags: string = tags.toString();
+    if (tempTags) formData.set("tags", tempTags);
 
     if (post) {
       formData.set("draft", "false");

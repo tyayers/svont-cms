@@ -10,6 +10,9 @@
         ],
         "svont-ccs-test": [
           "svont-ccs-test"
+        ],
+        "svont-cms-test2": [
+          "svont-cms-test2"
         ]
       }
     }

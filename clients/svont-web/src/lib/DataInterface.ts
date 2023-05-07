@@ -73,6 +73,7 @@ export type PostOverview = {
   id: string;
   title: string;
   summary: string;
+  image: string;
   draft: boolean;
   authorId: string;
   authorDisplayName: string;

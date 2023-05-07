@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -249,9 +250,12 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 
 		bytes, _ := ioutil.ReadAll(src)
 		files[attachment.Filename] = bytes
-		// streamFileUpload("posts/"+newPost.Header.Id+"/"+attachment.Filename, bytes)
 
 		updatedPost.Files = append(updatedPost.Files, attachment.Filename)
+
+		if updatedPost.Header.Image == "" && (strings.HasSuffix(strings.ToLower(attachment.Filename), "png") || strings.HasSuffix(strings.ToLower(attachment.Filename), "jpg")) {
+			updatedPost.Header.Image = attachment.Filename
+		}
 	}
 
 	updatedPost.Header.FileCount = len(updatedPost.Files)
@@ -260,10 +264,13 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header := index[updatedPost.Header.Id]
 	header.Title = updatedPost.Header.Title
 	header.Summary = updatedPost.Header.Summary
+	if header.Image == "" {
+		header.Image = updatedPost.Header.Image
+	}
 
 	UpdateTags(header.Id, header.Index, header.Tags, updatedPost.Header.Tags)
 	header.Tags = updatedPost.Header.Tags
-
+	header.FileCount = updatedPost.Header.FileCount
 	header.Updated = updatedPost.Header.Updated
 	index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()

@@ -136,6 +136,10 @@ func (provider *LocalProvider) UpdatePost(post Post, fileAttachments map[string]
 	jsonData, _ := json.Marshal(post)
 	err := os.WriteFile("./localdata/"+post.Header.Id+"/post.json", jsonData, 0644)
 
+	for k, v := range fileAttachments {
+		err = os.WriteFile("./localdata/"+post.Header.Id+"/"+k, v, 0644)
+	}
+
 	if err != nil {
 		return err
 	} else {

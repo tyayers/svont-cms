@@ -76,6 +76,7 @@
                   {/each}
                 {/if}
               </div>
+              <PostFooter post={data.post} />
               <div class="post_attachments">
                 {#if data.post.files && data.post.files.length > 0}
                   <div class="post_attachments_header">Attachments:</div>
@@ -126,7 +127,6 @@
                   {/each}
                 {/if}
               </div>
-              <PostFooter post={data.post} />
             </div>
             <div class="post-comments">
               <h3 class="post-comments-header">Comments</h3>
@@ -225,6 +225,7 @@
   .tags_box {
     /* margin-left: 23px; */
     margin-top: 44px;
+    margin-bottom: 24px;
     font-size: 15px;
     font-weight: 500;
     color: gray;
@@ -247,7 +248,6 @@
     max-width: 680px;
     /* margin-left: 24px; */
     margin-right: 24px;
-    margin-top: 40px;
     min-width: 0px;
   }
 
@@ -257,7 +257,8 @@
 
   .post_attachments {
     margin-top: 32px;
-    margin-left: 24px;
+    margin-bottom: 24px;
+    /* margin-left: 24px; */
     color: rgba(117, 117, 117, 1);
     overflow-wrap: break-word;
   }

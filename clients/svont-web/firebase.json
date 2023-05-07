@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "target": "svont-ccs-test",
+    "target": "svont-cms-test2",
     "public": "build",
     "ignore": [
       "firebase.json",

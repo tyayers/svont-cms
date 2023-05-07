@@ -148,13 +148,14 @@ func updatePost(c *gin.Context) {
 	postId := c.Param("id")
 	user_id := c.GetString("user_id")
 
-	post := content.GetPostOverview(postId)
+	// post := content.GetPostOverview(postId)
+	post := content.GetPost(postId)
 
-	if post.AuthorId != user_id {
+	if post.Header.AuthorId != user_id {
 		c.String(401, fmt.Sprintf("User not authorized to delete post."))
 	} else {
-		updatedPost := data.Post{}
-		updatedPost.Header.Id = postId
+		// updatedPost := data.Post{}
+		// updatedPost.Header.Id = postId
 
 		var files []multipart.FileHeader
 
@@ -169,21 +170,23 @@ func updatePost(c *gin.Context) {
 			fmt.Printf("%v = %v \n", key, value)
 			switch key {
 			case "title":
-				updatedPost.Header.Title = value[0]
+				post.Header.Title = value[0]
 			case "content":
-				updatedPost.Content = value[0]
+				post.Content = value[0]
 			case "summary":
-				updatedPost.Header.Summary = value[0]
+				post.Header.Summary = value[0]
 			case "tags":
-				updatedPost.Header.Tags = strings.Split(value[0], ",")
+				post.Header.Tags = strings.Split(value[0], ",")
+			case "draft":
+				post.Header.Draft, _ = strconv.ParseBool(value[0])
 			default:
 				fmt.Println("No handler found for form item " + key)
 			}
 		}
 
-		content.UpdatePost(&updatedPost, files)
+		content.UpdatePost(post, files)
 
-		c.IndentedJSON(http.StatusOK, updatedPost)
+		c.IndentedJSON(http.StatusOK, post)
 	}
 }
 
@@ -316,6 +319,7 @@ func attachFileToPost(c *gin.Context) {
 		}
 
 		imageUploadResult := data.ImageUploadResult{Url: url + c.Request.Host + "/posts/" + postId + "/files/" + file.Filename}
+
 		c.IndentedJSON(http.StatusCreated, imageUploadResult)
 		//c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
 	}

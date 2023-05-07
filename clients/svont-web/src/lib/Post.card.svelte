@@ -3,7 +3,7 @@
 
   import type { PostOverview } from "./DataInterface";
   import { ToTitleCase } from "./DataInterface";
-
+  import { appService } from "./DataService";
   export let post: PostOverview = undefined;
 
   let dateString = "";
@@ -33,9 +33,28 @@
           </div>
         </div>
         <div class="content">
-          <h2 class="title">{post.title}</h2>
-          <div>
-            {@html post.summary}
+          <div class="content_body">
+            <span
+              class:content_left={post.image}
+              class:content_left_full={!post.image}
+            >
+              <h2 class="title">{post.title}</h2>
+              {@html post.summary}
+            </span>
+
+            {#if post.image}
+              <span class="content_right">
+                <img
+                  class="content_right_image"
+                  src={appService.GetServer("IMAGE") +
+                    "/posts/" +
+                    post.id +
+                    "/files/" +
+                    post.image}
+                  alt="Post preview"
+                />
+              </span>
+            {/if}
           </div>
           <br />
           {#if post.tags && post.tags.length > 0}
@@ -98,6 +117,26 @@
 
   .title {
     text-decoration: none;
+  }
+
+  .content_body {
+    display: flex;
+  }
+
+  .content_left {
+    width: 70%;
+  }
+
+  .content_left_full {
+    width: 100%;
+  }
+
+  .content_right {
+    width: 25%;
+    margin-left: 10px;
+    margin-top: auto;
+    height: 100%;
+    /* margin-bottom: auto; */
   }
 
   .tags_box {
