@@ -96,7 +96,10 @@ func GetPosts(start int, limit int) []data.PostOverview {
 		postIndex := len(index_time) - 1 - start
 
 		for postIndex >= 0 && len(resultPosts) < limit {
-			resultPosts = append(resultPosts, index[index_time[postIndex]])
+			if !index[index_time[postIndex]].Deleted {
+				resultPosts = append(resultPosts, index[index_time[postIndex]])
+			}
+
 			postIndex--
 		}
 	}
@@ -225,6 +228,8 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	}
 
 	postsMutex.Unlock()
+	// Persist changes to storage in the background
+	go Finalize()
 
 	err := dataProvider.CreatePost(*newPost, files)
 
@@ -274,6 +279,8 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header.Updated = updatedPost.Header.Updated
 	index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
+	// Persist changes to storage in the background
+	go Finalize()
 
 	updatedPost.Header = header
 
@@ -319,6 +326,8 @@ func UpvotePost(postId string, userEmail string) (*data.PostOverview, error) {
 		}
 
 		postsMutex.Unlock()
+		// Persist changes to storage in the background
+		go Finalize()
 
 		return &post, nil
 	} else {
@@ -349,6 +358,8 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 			post.CommentCount++
 			index[postId] = post
 			postsMutex.Unlock()
+			// Persist changes to storage in the background
+			go Finalize()
 
 			return result, nil
 		} else {
@@ -376,9 +387,42 @@ func GetFileForPost(postId string, fileName string) ([]byte, error) {
 func DeletePost(postId string) error {
 
 	postsMutex.Lock()
-	delete(index, postId)
-	// TODO delete from index_time and index_popularity
+	post, ok := index[postId]
+
+	if ok {
+		post.Deleted = true
+		index[postId] = post
+
+		// Remove item from previous popularity space
+		for i, s := range index_popularity[post.Upvotes-1] {
+			if s == post.Id {
+				// We found our post in the old spot, now remove
+				index_popularity[post.Upvotes-1][i] = index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] // Copy last element to index i.
+				index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] = ""                                  // Erase last element (write zero value).
+				index_popularity[post.Upvotes-1] = index_popularity[post.Upvotes-1][:len(index_popularity[post.Upvotes-1])-1]   // Truncate slice.
+			}
+		}
+
+		// Remove from tags collection
+		for _, removeTag := range post.Tags {
+			val, ok := index_tags[removeTag]
+			// If the key exists
+			if ok {
+				delete(val, post.Index)
+			} else {
+				// Log error
+			}
+		}
+
+		// Remove from search
+		if searchIndex != nil {
+			searchIndex.Delete(postId)
+		}
+	}
+
 	postsMutex.Unlock()
+	// Persist changes to storage in the background
+	go Finalize()
 
 	return dataProvider.DeletePost(postId)
 }

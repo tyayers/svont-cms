@@ -6,6 +6,7 @@ type PostOverview struct {
 	Summary           string   `json:"summary"`
 	Image             string   `json:"image"`
 	Draft             bool     `json:"draft"`
+	Deleted           bool     `jason:"deleted"`
 	Tags              []string `json:"tags"`
 	AuthorId          string   `json:"authorId"`
 	AuthorDisplayName string   `json:"authorDisplayName"`

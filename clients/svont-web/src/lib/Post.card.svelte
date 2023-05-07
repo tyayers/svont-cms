@@ -139,6 +139,9 @@
     /* margin-bottom: auto; */
   }
 
+  .content_right_image {
+  }
+
   .tags_box {
     /* margin-left: 23px; */
     /* margin-top: 44px; */
