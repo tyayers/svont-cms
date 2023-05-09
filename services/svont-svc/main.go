@@ -27,12 +27,12 @@ func getData(c *gin.Context) {
 
 func reload(c *gin.Context) {
 	content.Initialize(true)
-	c.String(200, "Reload successful.")
+	c.IndentedJSON(http.StatusOK, content.GetData())
 }
 
 func persist(c *gin.Context) {
 	content.Finalize()
-	c.String(200, "Persist successful.")
+	c.IndentedJSON(http.StatusOK, content.GetData())
 }
 
 func getPosts(c *gin.Context) {
@@ -407,15 +407,15 @@ func main() {
 		switch sig {
 		case os.Interrupt:
 			fmt.Println("Interrupt received, persisting index and closing.")
-			content.Finalize()
+			//content.Finalize()
 			os.Exit(1)
 		case syscall.SIGKILL:
 			fmt.Println("SIGINT received, persisting index and closing.")
-			content.Finalize()
+			//content.Finalize()
 			os.Exit(1)
 		case syscall.SIGTERM:
 			fmt.Println("SIGTERM received, persisting index and closing.")
-			content.Finalize()
+			//content.Finalize()
 			os.Exit(1)
 		}
 	}()

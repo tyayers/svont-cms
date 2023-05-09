@@ -34,11 +34,18 @@ var tagIndex bleve.Index
 var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize(force bool) {
+	fmt.Println("Starting loading indexes...")
+	start := time.Now()
 	index, index_time, index_popularity, index_tags = dataProvider.Initialize()
+	
+	elapsed := time.Since(start)
+	fmt.Printf("Finished loading indexes in {%s}\n", elapsed)
 
 	// Initialize bleve search index, if it doesn't exist
 	if _, err := os.Stat("./posts.bleve"); os.IsNotExist(err) || force {
 		// Initialize bleve
+		fmt.Println("Starting building bleve index...")
+		start = time.Now()
 		os.RemoveAll("./posts.bleve")
 		mapping := bleve.NewIndexMapping()
 		var err error
@@ -47,14 +54,22 @@ func Initialize(force bool) {
 			fmt.Println(err)
 		}
 
+		count := 0
 		for k, v := range index {
-			fmt.Printf("indexing key[%s] value[%s]\n", k, v.Id)
+			fmt.Printf("Indexing key[%s] and index [%d]\n", k, count)
 			searchIndex.Index(v.Id, v)
+			count++
 		}
+
+		elapsed = time.Since(start)
+		fmt.Printf("Finished indexing bleve in {%s}\n", elapsed)
 	} else {
-		log.Printf("Loading local bleve index..")
+		log.Printf("Loading local bleve index..\n")
+		start = time.Now()
 		searchIndex, err = bleve.Open("posts.bleve")
-		log.Printf("Finished loading local bleve index..")
+		
+		elapsed = time.Since(start)
+		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)	
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -63,6 +78,8 @@ func Initialize(force bool) {
 	// Initialize bleve tag index, if it doesn't exist
 	if _, err := os.Stat("./tags.bleve"); os.IsNotExist(err) || force {
 		// Initialize bleve
+		log.Printf("Starting loading local bleve tag index..\n")
+		start = time.Now()
 		os.RemoveAll("./tags.bleve")
 		mapping := bleve.NewIndexMapping()
 		var err error
@@ -71,14 +88,22 @@ func Initialize(force bool) {
 			fmt.Println(err)
 		}
 
-		for k, _ := range index_tags {
-			fmt.Printf("indexing key[%s] value[%s]\n", k, k)
+		count := 0
+		for k := range index_tags {
+			fmt.Printf("Indexing tag key[%s] and index [%d]\n", k, count)
 			tagIndex.Index(k, k)
-		}
+			count++
+		}		
+		
+		elapsed = time.Since(start)
+		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)	
+
 	} else {
-		log.Printf("Loading local bleve tag index..")
+		log.Println("Loading local bleve tag index..")
+		start = time.Now()
 		tagIndex, err = bleve.Open("tags.bleve")
-		log.Printf("Finished loading local bleve tag index..")
+		elapsed = time.Since(start)
+		fmt.Printf("Finished loading bleve tag index in {%s}\n", elapsed)	
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -86,7 +111,13 @@ func Initialize(force bool) {
 }
 
 func Finalize() {
+	fmt.Println("Starting finalizing indexes...")
+	start := time.Now()
+
 	dataProvider.Finalize(index, index_time, index_popularity, index_tags)
+
+	elapsed := time.Since(start)
+	fmt.Printf("Finished finalizing indexes in {%s}\n", elapsed)	
 }
 
 func GetData() data.Metadata {

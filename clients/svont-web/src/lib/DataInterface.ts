@@ -48,6 +48,8 @@ export interface DataService {
 
   // Admin
   GetMetadata(): Promise<Metadata>;
+  DoRefresh(): Promise<Metadata>;
+  DoPersist(): Promise<Metadata>;
 }
 
 export type AppUser = {

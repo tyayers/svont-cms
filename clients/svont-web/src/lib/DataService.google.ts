@@ -493,6 +493,46 @@ export class DataServiceGoogle implements DataService {
     });
   }
 
+  DoRefresh(): Promise<Metadata> {
+    return new Promise<Metadata>((resolve, reject) => {
+      this.GetIdToken().then((idToken) => {
+        fetch(this.defaultServer + "/admin/reload", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
+          .then((response) => {
+            return response.json();
+          })
+          .then((data: Metadata) => {
+            resolve(data);
+          });
+      });
+    });
+  }
+
+  DoPersist(): Promise<Metadata> {
+    return new Promise<Metadata>((resolve, reject) => {
+      this.GetIdToken().then((idToken) => {
+        fetch(this.defaultServer + "/admin/persist", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
+          .then((response) => {
+            return response.json();
+          })
+          .then((data: Metadata) => {
+            resolve(data);
+          });
+      });
+    });
+  }
+
   addComment(
     comments: PostComment[],
     parentCommentId: string,
