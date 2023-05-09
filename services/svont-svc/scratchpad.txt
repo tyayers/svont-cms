@@ -12,6 +12,8 @@ curl -X POST http://localhost:8080/posts/oJnNPGsi/files \
 
 # Force reinit of data
 curl -X POST http://localhost:8080/admin/reload
+curl -X POST https://cms2-service-ghfontasua-ew.a.run.app/admin/reload
 
 # Force persist of data
-curl -X POST http://localhost:8080/admin/persist
+curl -X POST http://localhost:8080/admin/reload
+curl -X POST https://cms2-service-ghfontasua-ew.a.run.app/admin/persist

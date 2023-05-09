@@ -21,6 +21,10 @@ import (
 
 var app *firebase.App
 
+func getData(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, content.GetData())
+}
+
 func reload(c *gin.Context) {
 	content.Initialize(true)
 	c.String(200, "Reload successful.")
@@ -438,6 +442,7 @@ func main() {
 	router.GET("/tags/:name", getTaggedPosts)
 	router.GET("/tags/search", searchTags)
 
+	router.GET("/admin/data", getData)
 	router.POST("/admin/reload", reload)
 	router.POST("/admin/persist", persist)
 

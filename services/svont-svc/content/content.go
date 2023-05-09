@@ -89,6 +89,12 @@ func Finalize() {
 	dataProvider.Finalize(index, index_time, index_popularity, index_tags)
 }
 
+func GetData() data.Metadata {
+	result := data.Metadata{PostCount: len(index_time)}
+
+	return result
+}
+
 func GetPosts(start int, limit int) []data.PostOverview {
 	resultPosts := []data.PostOverview{}
 
@@ -96,7 +102,7 @@ func GetPosts(start int, limit int) []data.PostOverview {
 		postIndex := len(index_time) - 1 - start
 
 		for postIndex >= 0 && len(resultPosts) < limit {
-			if !index[index_time[postIndex]].Deleted {
+			if !index[index_time[postIndex]].Deleted && !index[index_time[postIndex]].Draft {
 				resultPosts = append(resultPosts, index[index_time[postIndex]])
 			}
 

@@ -35,6 +35,7 @@
     <div class="arrow" />
     <div class="menu">
       <div class="panel">
+        <div class="result"><a href="/admin">Admin</a></div>
         <div class="result" on:mousedown={signOut}>Sign out</div>
       </div>
     </div>
@@ -76,7 +77,7 @@
     height: 100%;
     z-index: 2;
     padding-top: 20px;
-    padding-bottom: 20px;
+    /* padding-bottom: 20px; */
     font-family: sohne, "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
@@ -98,9 +99,9 @@
 
   .result {
     padding-top: 5px;
-    padding-bottom: 5px;
+    padding-bottom: 16px;
     padding-left: 10px;
-    border-bottom: 1px dashed rgb(242, 242, 242);
+    /* border-bottom: 1px dashed rgb(242, 242, 242); */
     cursor: pointer;
     font-size: 16px;
   }

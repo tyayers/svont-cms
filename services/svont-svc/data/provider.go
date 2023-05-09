@@ -43,6 +43,12 @@ type SearchResult struct {
 	Count int    `json:"count"`
 }
 
+type Metadata struct {
+	PostCount    int `json:"postCount"`
+	DeletedCount int `json:"deletedCount"`
+	UserCount    int `json:"userCount"`
+}
+
 type ImageUploadResult struct {
 	Url string `json:"url"`
 }

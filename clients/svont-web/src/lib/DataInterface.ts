@@ -45,6 +45,9 @@ export interface DataService {
 
   // Events
   SendEvent(eventType: EventType, additionalInfo?: string);
+
+  // Admin
+  GetMetadata(): Promise<Metadata>;
 }
 
 export type AppUser = {
@@ -107,6 +110,12 @@ export type PostComment = {
 export type AppEvent = {
   type: EventType;
   additionalInfo: string;
+};
+
+export type Metadata = {
+  postCount: number;
+  deletedCount: number;
+  userCount: number;
 };
 
 export enum HeaderButton {

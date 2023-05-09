@@ -22,6 +22,7 @@ import {
   EventType,
   type AppEvent,
   type PostComment,
+  type Metadata,
 } from "./DataInterface";
 import { writable, type StartStopNotifier, type Writable } from "svelte/store";
 import type { AppUser } from "./DataInterface";
@@ -469,6 +470,26 @@ export class DataServiceGoogle implements DataService {
             });
         });
       } else resolve([]);
+    });
+  }
+
+  GetMetadata(): Promise<Metadata> {
+    return new Promise<Metadata>((resolve, reject) => {
+      this.GetIdToken().then((idToken) => {
+        fetch(this.defaultServer + "/admin/data", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: "Bearer " + idToken,
+          },
+        })
+          .then((response) => {
+            return response.json();
+          })
+          .then((data: Metadata) => {
+            resolve(data);
+          });
+      });
     });
   }
 
