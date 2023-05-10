@@ -1,6 +1,18 @@
 package data
 
-type PostOverview struct {
+type PostIndex struct {
+	Index                   map[string]PostHeader
+	IndexTime               []string
+	IndexTags               map[string]map[int]string
+	IndexPopularityLikes    map[int][]string
+	IndexPopularityViews    map[int][]string
+	IndexPopularityComments map[int][]string
+	IndexCountLikes         map[string]int
+	IndexCountComments      map[string]int
+	IndexCountViews         map[string]int
+}
+
+type PostHeader struct {
 	Id                string   `json:"id"`
 	Title             string   `json:"title"`
 	Summary           string   `json:"summary"`
@@ -32,9 +44,9 @@ type PostComment struct {
 }
 
 type Post struct {
-	Header  PostOverview `json:"header"`
-	Content string       `json:"content"`
-	Files   []string     `json:"files"`
+	Header  PostHeader `json:"header"`
+	Content string     `json:"content"`
+	Files   []string   `json:"files"`
 }
 
 type SearchResult struct {
@@ -54,8 +66,8 @@ type ImageUploadResult struct {
 }
 
 type Provider interface {
-	Initialize() (map[string]PostOverview, []string, map[int][]string, map[string]map[int]string)
-	Finalize(index_main map[string]PostOverview, index_time []string, index_populary map[int][]string, index_tags map[string]map[int]string)
+	Initialize() (index PostIndex)
+	Finalize(peristMode PersistMode, index PostIndex)
 
 	GetPost(postId string) *Post
 	CreatePost(newPost Post, fileAttachments map[string][]byte) error
@@ -67,3 +79,18 @@ type Provider interface {
 	GetFile(postId string, fileName string) ([]byte, error)
 	DeletePost(postId string) error
 }
+
+type PersistMode int
+
+const (
+	PersistAll = iota
+	PersistOnlyHeaders
+	PersistOnlyTime
+	PersistOnlyTags
+	PersistOnlyPopularityLikes
+	PersistOnlyPopularityComments
+	PersistOnlyPopularityViews
+	PersistOnlyCountLikes
+	PersistOnlyCountComments
+	PersistOnlyCountViews
+)

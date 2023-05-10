@@ -19,11 +19,7 @@ import (
 )
 
 var postsMutex = sync.Mutex{}
-var index map[string]data.PostOverview
-var index_time []string
-var index_popularity map[int][]string
-var index_tags map[string]map[int]string
-
+var index data.PostIndex
 var searchIndex bleve.Index
 var tagIndex bleve.Index
 
@@ -36,8 +32,8 @@ var dataProvider data.Provider = &data.GCSProvider{}
 func Initialize(force bool) {
 	fmt.Println("Starting loading indexes...")
 	start := time.Now()
-	index, index_time, index_popularity, index_tags = dataProvider.Initialize()
-	
+	index = dataProvider.Initialize()
+
 	elapsed := time.Since(start)
 	fmt.Printf("Finished loading indexes in {%s}\n", elapsed)
 
@@ -55,7 +51,7 @@ func Initialize(force bool) {
 		}
 
 		count := 0
-		for k, v := range index {
+		for k, v := range index.Index {
 			fmt.Printf("Indexing key[%s] and index [%d]\n", k, count)
 			searchIndex.Index(v.Id, v)
 			count++
@@ -67,9 +63,9 @@ func Initialize(force bool) {
 		log.Printf("Loading local bleve index..\n")
 		start = time.Now()
 		searchIndex, err = bleve.Open("posts.bleve")
-		
+
 		elapsed = time.Since(start)
-		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)	
+		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -89,21 +85,21 @@ func Initialize(force bool) {
 		}
 
 		count := 0
-		for k := range index_tags {
+		for k := range index.IndexTags {
 			fmt.Printf("Indexing tag key[%s] and index [%d]\n", k, count)
 			tagIndex.Index(k, k)
 			count++
-		}		
-		
+		}
+
 		elapsed = time.Since(start)
-		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)	
+		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)
 
 	} else {
 		log.Println("Loading local bleve tag index..")
 		start = time.Now()
 		tagIndex, err = bleve.Open("tags.bleve")
 		elapsed = time.Since(start)
-		fmt.Printf("Finished loading bleve tag index in {%s}\n", elapsed)	
+		fmt.Printf("Finished loading bleve tag index in {%s}\n", elapsed)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -114,27 +110,27 @@ func Finalize() {
 	fmt.Println("Starting finalizing indexes...")
 	start := time.Now()
 
-	dataProvider.Finalize(index, index_time, index_popularity, index_tags)
+	dataProvider.Finalize(data.PersistAll, index)
 
 	elapsed := time.Since(start)
-	fmt.Printf("Finished finalizing indexes in {%s}\n", elapsed)	
+	fmt.Printf("Finished finalizing indexes in {%s}\n", elapsed)
 }
 
 func GetData() data.Metadata {
-	result := data.Metadata{PostCount: len(index_time)}
+	result := data.Metadata{PostCount: len(index.IndexTime)}
 
 	return result
 }
 
-func GetPosts(start int, limit int) []data.PostOverview {
-	resultPosts := []data.PostOverview{}
+func GetPosts(start int, limit int) []data.PostHeader {
+	resultPosts := []data.PostHeader{}
 
-	if len(index_time) > 0 {
-		postIndex := len(index_time) - 1 - start
+	if len(index.IndexTime) > 0 {
+		postIndex := len(index.IndexTime) - 1 - start
 
 		for postIndex >= 0 && len(resultPosts) < limit {
-			if !index[index_time[postIndex]].Deleted && !index[index_time[postIndex]].Draft {
-				resultPosts = append(resultPosts, index[index_time[postIndex]])
+			if !index.Index[index.IndexTime[postIndex]].Deleted && !index.Index[index.IndexTime[postIndex]].Draft {
+				resultPosts = append(resultPosts, index.Index[index.IndexTime[postIndex]])
 			}
 
 			postIndex--
@@ -144,11 +140,11 @@ func GetPosts(start int, limit int) []data.PostOverview {
 	return resultPosts
 }
 
-func GetPopularPosts(start int, limit int) []data.PostOverview {
-	postsByPopularity := []data.PostOverview{}
+func GetPopularPosts(start int, limit int) []data.PostHeader {
+	postsByPopularity := []data.PostHeader{}
 
-	keys := make([]int, 0, len(index_popularity))
-	for k := range index_popularity {
+	keys := make([]int, 0, len(index.IndexPopularityLikes))
+	for k := range index.IndexPopularityLikes {
 		keys = append(keys, k)
 	}
 
@@ -157,8 +153,8 @@ func GetPopularPosts(start int, limit int) []data.PostOverview {
 	})
 
 	for _, v := range keys {
-		for i := range index_popularity[v] {
-			postsByPopularity = append(postsByPopularity, index[index_popularity[v][i]])
+		for i := range index.IndexPopularityLikes[v] {
+			postsByPopularity = append(postsByPopularity, index.Index[index.IndexPopularityLikes[v][i]])
 
 			if len(postsByPopularity) >= limit {
 				break
@@ -173,10 +169,10 @@ func GetPopularPosts(start int, limit int) []data.PostOverview {
 	return postsByPopularity
 }
 
-func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
-	taggedPosts := []data.PostOverview{}
+func GetTaggedPosts(tagName string, start int, limit int) []data.PostHeader {
+	taggedPosts := []data.PostHeader{}
 
-	posts, ok := index_tags[tagName]
+	posts, ok := index.IndexTags[tagName]
 
 	if ok {
 		keys := make([]int, 0, len(posts))
@@ -190,7 +186,7 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
 
 		postIndex := start
 		for postIndex < len(keys) && len(taggedPosts) < limit {
-			post, ok := index[posts[keys[postIndex]]]
+			post, ok := index.Index[posts[keys[postIndex]]]
 			if ok {
 				taggedPosts = append(taggedPosts, post)
 			}
@@ -204,12 +200,12 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostOverview {
 
 func GetPost(postId string) *data.Post {
 	var post = dataProvider.GetPost(postId)
-	post.Header = index[postId]
+	post.Header = index.Index[postId]
 	return post
 }
 
-func GetPostOverview(postId string) data.PostOverview {
-	return index[postId]
+func GetPostOverview(postId string) data.PostHeader {
+	return index.Index[postId]
 }
 
 func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
@@ -238,28 +234,28 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	postsMutex.Lock()
 
 	// Add to time index
-	index_time = append(index_time, newPost.Header.Id)
-	newPost.Header.Index = len(index_time) - 1
+	index.IndexTime = append(index.IndexTime, newPost.Header.Id)
+	newPost.Header.Index = len(index.IndexTime) - 1
 
 	// Add to id index
-	index[newPost.Header.Id] = newPost.Header
+	index.Index[newPost.Header.Id] = newPost.Header
 
 	// Add to popularity index
-	index_popularity[0] = append(index_popularity[0], newPost.Header.Id)
+	index.IndexPopularityLikes[0] = append(index.IndexPopularityLikes[0], newPost.Header.Id)
 
 	// Add to tag index
 	if newPost.Header.Tags != nil {
 		for _, tag := range newPost.Header.Tags {
 
 			if tag != "" {
-				_, ok := index_tags[tag]
+				_, ok := index.IndexTags[tag]
 
 				if !ok {
-					index_tags[tag] = map[int]string{}
+					index.IndexTags[tag] = map[int]string{}
 					tagIndex.Index(tag, tag)
 				}
 
-				index_tags[tag][newPost.Header.Index] = newPost.Header.Id
+				index.IndexTags[tag][newPost.Header.Index] = newPost.Header.Id
 			}
 		}
 	}
@@ -303,7 +299,7 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	updatedPost.Header.FileCount = len(updatedPost.Files)
 
 	postsMutex.Lock()
-	header := index[updatedPost.Header.Id]
+	header := index.Index[updatedPost.Header.Id]
 	header.Title = updatedPost.Header.Title
 	header.Summary = updatedPost.Header.Summary
 	if header.Image == "" {
@@ -314,7 +310,8 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header.Tags = updatedPost.Header.Tags
 	header.FileCount = updatedPost.Header.FileCount
 	header.Updated = updatedPost.Header.Updated
-	index[updatedPost.Header.Id] = header
+	header.Draft = updatedPost.Header.Draft
+	index.Index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
 	go Finalize()
@@ -334,32 +331,32 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	}
 }
 
-func UpvotePost(postId string, userEmail string) (*data.PostOverview, error) {
+func UpvotePost(postId string, userEmail string) (*data.PostHeader, error) {
 
-	post, ok := index[postId]
+	post, ok := index.Index[postId]
 
 	if ok {
 		postsMutex.Lock()
 		post.Upvotes++
-		index[postId] = post
+		index.Index[postId] = post
 
 		// Remove item from previous popularity space
-		for i, s := range index_popularity[post.Upvotes-1] {
+		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
 			if s == post.Id {
 				// We found our post in the old spot, now remove
-				index_popularity[post.Upvotes-1][i] = index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] // Copy last element to index i.
-				index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] = ""                                  // Erase last element (write zero value).
-				index_popularity[post.Upvotes-1] = index_popularity[post.Upvotes-1][:len(index_popularity[post.Upvotes-1])-1]   // Truncate slice.
+				index.IndexPopularityLikes[post.Upvotes-1][i] = index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] // Copy last element to index i.
+				index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] = ""                                            // Erase last element (write zero value).
+				index.IndexPopularityLikes[post.Upvotes-1] = index.IndexPopularityLikes[post.Upvotes-1][:len(index.IndexPopularityLikes[post.Upvotes-1])-1]   // Truncate slice.
 			}
 		}
 
 		// Add to new popularity spot
-		val, ok := index_popularity[post.Upvotes]
+		val, ok := index.IndexPopularityLikes[post.Upvotes]
 		// If the key exists
 		if ok {
-			index_popularity[post.Upvotes] = append(val, post.Id)
+			index.IndexPopularityLikes[post.Upvotes] = append(val, post.Id)
 		} else {
-			index_popularity[post.Upvotes] = []string{post.Id}
+			index.IndexPopularityLikes[post.Upvotes] = []string{post.Id}
 		}
 
 		postsMutex.Unlock()
@@ -383,7 +380,7 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 	newComment.Children = []data.PostComment{}
 	newComment.Content = content
 
-	post, ok := index[postId]
+	post, ok := index.Index[postId]
 
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Post %s not found!", postId))
@@ -393,7 +390,7 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 		if err == nil {
 			postsMutex.Lock()
 			post.CommentCount++
-			index[postId] = post
+			index.Index[postId] = post
 			postsMutex.Unlock()
 			// Persist changes to storage in the background
 			go Finalize()
@@ -424,25 +421,25 @@ func GetFileForPost(postId string, fileName string) ([]byte, error) {
 func DeletePost(postId string) error {
 
 	postsMutex.Lock()
-	post, ok := index[postId]
+	post, ok := index.Index[postId]
 
 	if ok {
 		post.Deleted = true
-		index[postId] = post
+		index.Index[postId] = post
 
 		// Remove item from previous popularity space
-		for i, s := range index_popularity[post.Upvotes-1] {
+		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
 			if s == post.Id {
 				// We found our post in the old spot, now remove
-				index_popularity[post.Upvotes-1][i] = index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] // Copy last element to index i.
-				index_popularity[post.Upvotes-1][len(index_popularity[post.Upvotes-1])-1] = ""                                  // Erase last element (write zero value).
-				index_popularity[post.Upvotes-1] = index_popularity[post.Upvotes-1][:len(index_popularity[post.Upvotes-1])-1]   // Truncate slice.
+				index.IndexPopularityLikes[post.Upvotes-1][i] = index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] // Copy last element to index i.
+				index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] = ""                                            // Erase last element (write zero value).
+				index.IndexPopularityLikes[post.Upvotes-1] = index.IndexPopularityLikes[post.Upvotes-1][:len(index.IndexPopularityLikes[post.Upvotes-1])-1]   // Truncate slice.
 			}
 		}
 
 		// Remove from tags collection
 		for _, removeTag := range post.Tags {
-			val, ok := index_tags[removeTag]
+			val, ok := index.IndexTags[removeTag]
 			// If the key exists
 			if ok {
 				delete(val, post.Index)
@@ -465,7 +462,7 @@ func DeletePost(postId string) error {
 }
 
 // Searches posts
-func SearchPosts(text string) ([]data.PostOverview, error) {
+func SearchPosts(text string) ([]data.PostHeader, error) {
 	query := bleve.NewMatchQuery(text)
 	query.Fuzziness = 2
 
@@ -480,9 +477,9 @@ func SearchPosts(text string) ([]data.PostOverview, error) {
 			fmt.Println(err)
 			return nil, err
 		} else {
-			results := []data.PostOverview{}
+			results := []data.PostHeader{}
 			fmt.Println(searchResults)
-			dataMap := index
+			dataMap := index.Index
 			for _, val := range searchResults.Hits {
 				results = append(results, dataMap[val.ID])
 			}
@@ -515,7 +512,7 @@ func SearchTags(text string) ([]data.SearchResult, error) {
 			results := []data.SearchResult{}
 			fmt.Println(searchResults)
 			for _, val := range searchResults.Hits {
-				tag, ok := index_tags[val.ID]
+				tag, ok := index.IndexTags[val.ID]
 				if ok {
 					newTagResult := data.SearchResult{
 						Id:    val.ID,
@@ -538,7 +535,7 @@ func UpdateTags(postId string, postIndex int, originalTagList []string, newTagLi
 	tagsToRemove, tagsToAdd := GetUpdatedTags(originalTagList, newTagList)
 
 	for _, removeTag := range tagsToRemove {
-		val, ok := index_tags[removeTag]
+		val, ok := index.IndexTags[removeTag]
 		// If the key exists
 		if ok {
 			delete(val, postIndex)
@@ -549,14 +546,14 @@ func UpdateTags(postId string, postIndex int, originalTagList []string, newTagLi
 
 	for _, addTag := range tagsToAdd {
 		if addTag != "" {
-			_, ok := index_tags[addTag]
+			_, ok := index.IndexTags[addTag]
 
 			if !ok {
-				index_tags[addTag] = map[int]string{}
+				index.IndexTags[addTag] = map[int]string{}
 				tagIndex.Index(addTag, addTag)
 			}
 
-			index_tags[addTag][postIndex] = postId
+			index.IndexTags[addTag][postIndex] = postId
 		}
 	}
 }

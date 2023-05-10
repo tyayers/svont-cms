@@ -1,6 +1,6 @@
 <script lang="ts">
   import { appService } from "$lib/DataService";
-import { HeaderButton } from "../../lib/DataInterface";
+  import { HeaderButton } from "../../lib/DataInterface";
 
   import Header from "../../lib/Header.svelte";
 
@@ -8,16 +8,15 @@ import { HeaderButton } from "../../lib/DataInterface";
 
   function doRefresh() {
     appService.DoRefresh().then((data) => {
-      alert(JSON.stringify(data))
-    })
+      alert(JSON.stringify(data));
+    });
   }
 
   function doPersist() {
     appService.DoRefresh().then((data) => {
-      alert(JSON.stringify(data))
-    })
+      alert(JSON.stringify(data));
+    });
   }
-
 </script>
 
 <div class="newpost">
@@ -33,9 +32,8 @@ import { HeaderButton } from "../../lib/DataInterface";
       </div>
       <div>
         <button on:click={doPersist}>Persist Data</button>
-      </div>      
+      </div>
     </div>
-
   </div>
 </div>
 
@@ -48,9 +46,11 @@ import { HeaderButton } from "../../lib/DataInterface";
 
   .content_box {
     padding-top: 46px;
-    max-width: 1336px;
-    text-align: center;
+    /* max-width: 1336px; */
+    max-width: 736px;
+    padding-left: 24px;
+    padding-right: 24px;
+    text-align: left;
     margin: auto;
   }
-
 </style>
