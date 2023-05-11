@@ -31,7 +31,7 @@ func reload(c *gin.Context) {
 }
 
 func persist(c *gin.Context) {
-	content.Finalize()
+	content.Finalize(data.PersistAll)
 	c.IndentedJSON(http.StatusOK, content.GetData())
 }
 

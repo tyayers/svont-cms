@@ -148,7 +148,7 @@
 <style>
   .page_box {
     height: calc(100vh);
-    overflow-y: auto;
+    overflow-y: scroll;
   }
 
   .content {

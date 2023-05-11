@@ -106,14 +106,14 @@ func Initialize(force bool) {
 	}
 }
 
-func Finalize() {
-	fmt.Println("Starting finalizing indexes...")
+func Finalize(persistMode data.PersistMode) {
+	fmt.Printf("Starting finalizing indexes for persist mode %d.\n", persistMode)
 	start := time.Now()
 
-	dataProvider.Finalize(data.PersistAll, index)
+	dataProvider.Finalize(persistMode, index)
 
 	elapsed := time.Since(start)
-	fmt.Printf("Finished finalizing indexes in {%s}\n", elapsed)
+	fmt.Printf("Finished finalizing indexes with persist mode %d in {%s}\n", persistMode, elapsed)
 }
 
 func GetData() data.Metadata {
@@ -130,7 +130,11 @@ func GetPosts(start int, limit int) []data.PostHeader {
 
 		for postIndex >= 0 && len(resultPosts) < limit {
 			if !index.Index[index.IndexTime[postIndex]].Deleted && !index.Index[index.IndexTime[postIndex]].Draft {
-				resultPosts = append(resultPosts, index.Index[index.IndexTime[postIndex]])
+
+				var post = index.Index[index.IndexTime[postIndex]]
+				post.Upvotes = index.IndexCountLikes[post.Id]
+				post.CommentCount = index.IndexCountComments[post.Id]
+				resultPosts = append(resultPosts, post)
 			}
 
 			postIndex--
@@ -201,6 +205,8 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostHeader {
 func GetPost(postId string) *data.Post {
 	var post = dataProvider.GetPost(postId)
 	post.Header = index.Index[postId]
+	post.Header.Upvotes = index.IndexCountLikes[postId]
+	post.Header.CommentCount = index.IndexCountComments[postId]
 	return post
 }
 
@@ -240,8 +246,10 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	// Add to id index
 	index.Index[newPost.Header.Id] = newPost.Header
 
-	// Add to popularity index
+	// Add to popularity indexes
 	index.IndexPopularityLikes[0] = append(index.IndexPopularityLikes[0], newPost.Header.Id)
+	index.IndexPopularityComments[0] = append(index.IndexPopularityComments[0], newPost.Header.Id)
+	index.IndexPopularityViews[0] = append(index.IndexPopularityViews[0], newPost.Header.Id)
 
 	// Add to tag index
 	if newPost.Header.Tags != nil {
@@ -262,7 +270,7 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
-	go Finalize()
+	go Finalize(data.PersistAll)
 
 	err := dataProvider.CreatePost(*newPost, files)
 
@@ -314,7 +322,7 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	index.Index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
-	go Finalize()
+	go Finalize(data.PersistAll)
 
 	updatedPost.Header = header
 
@@ -339,6 +347,7 @@ func UpvotePost(postId string, userEmail string) (*data.PostHeader, error) {
 		postsMutex.Lock()
 		post.Upvotes++
 		index.Index[postId] = post
+		index.IndexCountLikes[postId]++
 
 		// Remove item from previous popularity space
 		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
@@ -361,7 +370,8 @@ func UpvotePost(postId string, userEmail string) (*data.PostHeader, error) {
 
 		postsMutex.Unlock()
 		// Persist changes to storage in the background
-		go Finalize()
+		go Finalize(data.PersistOnlyCountLikes)
+		go Finalize(data.PersistOnlyPopularityLikes)
 
 		return &post, nil
 	} else {
@@ -390,10 +400,11 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 		if err == nil {
 			postsMutex.Lock()
 			post.CommentCount++
+			index.IndexCountComments[postId]++
 			index.Index[postId] = post
 			postsMutex.Unlock()
 			// Persist changes to storage in the background
-			go Finalize()
+			go Finalize(data.PersistOnlyCountComments)
 
 			return result, nil
 		} else {
@@ -427,7 +438,7 @@ func DeletePost(postId string) error {
 		post.Deleted = true
 		index.Index[postId] = post
 
-		// Remove item from previous popularity space
+		// Remove item from previous popularity spaces
 		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
 			if s == post.Id {
 				// We found our post in the old spot, now remove
@@ -456,7 +467,7 @@ func DeletePost(postId string) error {
 
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
-	go Finalize()
+	go Finalize(data.PersistAll)
 
 	return dataProvider.DeletePost(postId)
 }

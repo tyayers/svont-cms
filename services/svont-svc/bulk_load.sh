@@ -1,7 +1,9 @@
-export TOKEN=eyJhbGciOiJSUzI1NiIsImtpZCI6ImI2NzE1ZTJmZjcxZDIyMjQ5ODk1MDAyMzY2ODMwNDc3Mjg2Nzg0ZTMiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiVHlsZXIgQXllcnMiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUVkRlRwN0NvTFo1X0ZGczRNVF9tNXl4TkJaSTlGYlRUOEsyZE9jQ1JkUU5aUT1zOTYtYyIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9jbG91ZDMyeCIsImF1ZCI6ImNsb3VkMzJ4IiwiYXV0aF90aW1lIjoxNjgzNDUwNDkxLCJ1c2VyX2lkIjoiQ1FkWFJmcFB4VWJ3TnJjdkw3Wm9XemtqamFjMiIsInN1YiI6IkNRZFhSZnBQeFVid05yY3ZMN1pvV3pramphYzIiLCJpYXQiOjE2ODM1MjkyOTAsImV4cCI6MTY4MzUzMjg5MCwiZW1haWwiOiJ0eWxlci5heWVyc0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMTYwNDkzMDkzNjg4ODQ3NDQzMSJdLCJlbWFpbCI6WyJ0eWxlci5heWVyc0BnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.KejpfiVQ2konm5648Sp8s0vmoy5I8rhP8mJQDV6hGSqUqojdLPb5l9E0nbts7VkU_0ON8DubK4zGj3kahBD7P_1KmFNS81ca7ejAWHNu9Q3IOfkrKFn1Uy9RBsX75z8gYzU5hx0k6355HwgtOQDA9pByQvS-A7ka9vpC1YFlglV2fqVDBmf20Mn4bIgP_jLGKDhWizc44vmAtNNQm9eilWyafegjy12HQH1fNzHWXAWesZyzFMB9w9bC7WRnYhEtMm1mk_2Q2PMCNlfan8CR5b6GU2BebwJQLiniTK8eeQ7Bksc0DX51ni4DL64OEnWcqzmE5cyf34374gZq_J-w_w
+export TOKEN=
 
 export HOST=https://cms2-service-ghfontasua-ew.a.run.app/posts
 # export HOST=http://localhost:8080/posts
+
+export CONTENT="A snowflake is a single  that has achieved a sufficient size, and may have amalgamated with others, which falls through the  as . Each flake nucleates around a dust particle in  air masses by attracting  cloud water droplets, which  and accrete in crystal"
 
 for i in {1..10000}
 do
@@ -10,7 +12,7 @@ do
    curl -X POST -i $HOST \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "title=test$i&content=test$i&authorDisplayName=LoadTest&authorProfilePic=https://lh3.googleusercontent.com/a/AEdFTp7CoLZ5_FFs4MT_m5yxNBZI9FbTT8K2dOcCRdQNZQ=s96-c"
+        -d "title=test$i&content=$CONTENT&summary=$CONTENT&authorDisplayName=LoadTest&authorProfilePic=https://lh3.googleusercontent.com/a/AEdFTp7CoLZ5_FFs4MT_m5yxNBZI9FbTT8K2dOcCRdQNZQ=s96-c"
    
    sleep .1
 done
