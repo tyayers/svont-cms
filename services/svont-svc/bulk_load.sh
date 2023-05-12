@@ -3,7 +3,7 @@ export TOKEN=
 export HOST=https://cms2-service-ghfontasua-ew.a.run.app/posts
 # export HOST=http://localhost:8080/posts
 
-export CONTENT="A snowflake is a single  that has achieved a sufficient size, and may have amalgamated with others, which falls through the  as . Each flake nucleates around a dust particle in  air masses by attracting  cloud water droplets, which  and accrete in crystal"
+export CONTENT="A snowflake is a single crystal that has achieved a sufficient size, and may have amalgamated with others, which falls through the  as . Each flake nucleates around a dust particle in  air masses by attracting  cloud water droplets, which  and accrete in crystal"
 
 for i in {1..10000}
 do

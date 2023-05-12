@@ -50,15 +50,8 @@ func Initialize(force bool) {
 			fmt.Println(err)
 		}
 
-		count := 0
-		for k, v := range index.Index {
-			fmt.Printf("Indexing key[%s] and index [%d]\n", k, count)
-			searchIndex.Index(v.Id, v)
-			count++
-		}
-
-		elapsed = time.Since(start)
-		fmt.Printf("Finished indexing bleve in {%s}\n", elapsed)
+		// Loop and index posts in a separate thread
+		go InitializeBleveIndex()
 	} else {
 		log.Printf("Loading local bleve index..\n")
 		start = time.Now()
@@ -73,9 +66,7 @@ func Initialize(force bool) {
 
 	// Initialize bleve tag index, if it doesn't exist
 	if _, err := os.Stat("./tags.bleve"); os.IsNotExist(err) || force {
-		// Initialize bleve
-		log.Printf("Starting loading local bleve tag index..\n")
-		start = time.Now()
+
 		os.RemoveAll("./tags.bleve")
 		mapping := bleve.NewIndexMapping()
 		var err error
@@ -84,16 +75,8 @@ func Initialize(force bool) {
 			fmt.Println(err)
 		}
 
-		count := 0
-		for k := range index.IndexTags {
-			fmt.Printf("Indexing tag key[%s] and index [%d]\n", k, count)
-			tagIndex.Index(k, k)
-			count++
-		}
-
-		elapsed = time.Since(start)
-		fmt.Printf("Finished loading bleve index in {%s}\n", elapsed)
-
+		// Loop and index tags in a separate thread
+		go InitializeBleveTags()
 	} else {
 		log.Println("Loading local bleve tag index..")
 		start = time.Now()
@@ -104,6 +87,34 @@ func Initialize(force bool) {
 			fmt.Println(err)
 		}
 	}
+}
+
+func InitializeBleveIndex() {
+	log.Printf("Starting loading local bleve post index..\n")
+	start := time.Now()
+	count := 0
+	for _, v := range index.Index {
+		//fmt.Printf("Indexing key[%s] and index [%d]\n", k, count)
+		searchIndex.Index(v.Id, v)
+		count++
+	}
+
+	elapsed := time.Since(start)
+	fmt.Printf("Finished indexing bleve posts in {%s}\n", elapsed)
+}
+
+func InitializeBleveTags() {
+	log.Printf("Starting loading local bleve tag index..\n")
+	start := time.Now()
+	count := 0
+	for k := range index.IndexTags {
+		//fmt.Printf("Indexing tag key[%s] and index [%d]\n", k, count)
+		tagIndex.Index(k, k)
+		count++
+	}
+
+	elapsed := time.Since(start)
+	fmt.Printf("Finished indexing bleve tags in {%s}\n", elapsed)
 }
 
 func Finalize(persistMode data.PersistMode) {
@@ -117,8 +128,7 @@ func Finalize(persistMode data.PersistMode) {
 }
 
 func GetData() data.Metadata {
-	result := data.Metadata{PostCount: len(index.IndexTime)}
-
+	result := data.Metadata{PostCount: len(index.IndexTime), DraftCount: len(index.IndexDrafts), DeletedCount: len(index.IndexDeleted)}
 	return result
 }
 
@@ -243,6 +253,11 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	index.IndexTime = append(index.IndexTime, newPost.Header.Id)
 	newPost.Header.Index = len(index.IndexTime) - 1
 
+	// Add to draft index
+	if newPost.Header.Draft {
+		index.IndexDrafts[newPost.Header.Id] = newPost.Header.Index
+	}
+
 	// Add to id index
 	index.Index[newPost.Header.Id] = newPost.Header
 
@@ -318,7 +333,13 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	header.Tags = updatedPost.Header.Tags
 	header.FileCount = updatedPost.Header.FileCount
 	header.Updated = updatedPost.Header.Updated
+
+	if header.Draft && !updatedPost.Header.Draft {
+		// post is no longer in draft, remove from draft index
+		delete(index.IndexDrafts, header.Id)
+	}
 	header.Draft = updatedPost.Header.Draft
+
 	index.Index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
@@ -463,6 +484,9 @@ func DeletePost(postId string) error {
 		if searchIndex != nil {
 			searchIndex.Delete(postId)
 		}
+
+		// Add to deleted index
+		index.IndexDeleted[postId] = post.Index
 	}
 
 	postsMutex.Unlock()

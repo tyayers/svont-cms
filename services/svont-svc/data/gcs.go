@@ -32,7 +32,7 @@ func (provider *GCSProvider) Initialize() PostIndex {
 	provider.BucketPath = os.Getenv("BUCKET_PATH")
 
 	var index PostIndex = PostIndex{Index: map[string]PostHeader{}, IndexTime: []string{},
-		IndexPopularityLikes: map[int][]string{}, IndexPopularityViews: map[int][]string{},
+		IndexDrafts: map[string]int{}, IndexDeleted: map[string]int{}, IndexPopularityLikes: map[int][]string{}, IndexPopularityViews: map[int][]string{},
 		IndexPopularityComments: map[int][]string{}, IndexTags: map[string]map[int]string{},
 		IndexCountLikes: map[string]int{}, IndexCountComments: map[string]int{},
 		IndexCountViews: map[string]int{}}
@@ -47,6 +47,18 @@ func (provider *GCSProvider) Initialize() PostIndex {
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexTime)
+	}
+
+	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_drafts.json")
+
+	if err == nil {
+		json.Unmarshal(postBytes, &index.IndexDrafts)
+	}
+
+	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_deleted.json")
+
+	if err == nil {
+		json.Unmarshal(postBytes, &index.IndexDeleted)
 	}
 
 	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_tags.json")
@@ -132,6 +144,28 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 		}
 
 		streamFileUpload(provider.BucketName, provider.BucketPath+"index_time.json", jsonData)
+	}
+
+	// Persist drafts index
+	if persistMode == PersistAll || persistMode == PersistOnlyDrafts {
+		jsonData, err := json.Marshal(index.IndexDrafts)
+		if err != nil {
+			fmt.Printf("could not marshal json: %s\n", err)
+			return
+		}
+
+		streamFileUpload(provider.BucketName, provider.BucketPath+"index_drafts.json", jsonData)
+	}
+
+	// Persist deleted index
+	if persistMode == PersistAll || persistMode == PersistOnlyDeleted {
+		jsonData, err := json.Marshal(index.IndexDeleted)
+		if err != nil {
+			fmt.Printf("could not marshal json: %s\n", err)
+			return
+		}
+
+		streamFileUpload(provider.BucketName, provider.BucketPath+"index_deleted.json", jsonData)
 	}
 
 	// Persist tag index

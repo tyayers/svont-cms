@@ -3,6 +3,8 @@ package data
 type PostIndex struct {
 	Index                   map[string]PostHeader
 	IndexTime               []string
+	IndexDrafts             map[string]int
+	IndexDeleted            map[string]int
 	IndexTags               map[string]map[int]string
 	IndexPopularityLikes    map[int][]string
 	IndexPopularityViews    map[int][]string
@@ -58,6 +60,7 @@ type SearchResult struct {
 type Metadata struct {
 	PostCount    int `json:"postCount"`
 	DeletedCount int `json:"deletedCount"`
+	DraftCount   int `json:"draftCount"`
 	UserCount    int `json:"userCount"`
 }
 
@@ -93,4 +96,6 @@ const (
 	PersistOnlyCountLikes
 	PersistOnlyCountComments
 	PersistOnlyCountViews
+	PersistOnlyDrafts
+	PersistOnlyDeleted
 )

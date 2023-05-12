@@ -116,6 +116,7 @@ export type AppEvent = {
 
 export type Metadata = {
   postCount: number;
+  draftCount: number;
   deletedCount: number;
   userCount: number;
 };
