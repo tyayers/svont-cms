@@ -6,14 +6,20 @@
 
   export let data;
 
+  let status: string = "";
+
   function doRefresh() {
+    status = "Refreshing data...";
     appService.DoRefresh().then((result) => {
+      status = "Refresh complete.";
       data.metadata = result;
     });
   }
 
   function doPersist() {
+    status = "Persisting data...";
     appService.DoRefresh().then((result) => {
+      status = "Persisting complete.";
       data.metadata = result;
     });
   }
@@ -27,6 +33,7 @@
       <div class="controls_box">
         <button class="control" on:click={doRefresh}>Refresh Data</button>
         <button class="control" on:click={doPersist}>Persist Data</button>
+        <span class="control">{status}</span>
       </div>
       {#if data && data.metadata}
         <div class="stats_box">

@@ -366,27 +366,27 @@ func UpvotePost(postId string, userEmail string) (*data.PostHeader, error) {
 
 	if ok {
 		postsMutex.Lock()
-		post.Upvotes++
-		index.Index[postId] = post
+
 		index.IndexCountLikes[postId]++
+		voteCount := index.IndexCountLikes[postId]
 
 		// Remove item from previous popularity space
-		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
+		for i, s := range index.IndexPopularityLikes[voteCount-1] {
 			if s == post.Id {
 				// We found our post in the old spot, now remove
-				index.IndexPopularityLikes[post.Upvotes-1][i] = index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] // Copy last element to index i.
-				index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] = ""                                            // Erase last element (write zero value).
-				index.IndexPopularityLikes[post.Upvotes-1] = index.IndexPopularityLikes[post.Upvotes-1][:len(index.IndexPopularityLikes[post.Upvotes-1])-1]   // Truncate slice.
+				index.IndexPopularityLikes[voteCount-1][i] = index.IndexPopularityLikes[voteCount-1][len(index.IndexPopularityLikes[voteCount-1])-1] // Copy last element to index i.
+				index.IndexPopularityLikes[voteCount-1][len(index.IndexPopularityLikes[voteCount-1])-1] = ""                                         // Erase last element (write zero value).
+				index.IndexPopularityLikes[voteCount-1] = index.IndexPopularityLikes[voteCount-1][:len(index.IndexPopularityLikes[voteCount-1])-1]   // Truncate slice.
 			}
 		}
 
 		// Add to new popularity spot
-		val, ok := index.IndexPopularityLikes[post.Upvotes]
+		val, ok := index.IndexPopularityLikes[voteCount]
 		// If the key exists
 		if ok {
-			index.IndexPopularityLikes[post.Upvotes] = append(val, post.Id)
+			index.IndexPopularityLikes[voteCount] = append(val, post.Id)
 		} else {
-			index.IndexPopularityLikes[post.Upvotes] = []string{post.Id}
+			index.IndexPopularityLikes[voteCount] = []string{post.Id}
 		}
 
 		postsMutex.Unlock()
@@ -458,14 +458,15 @@ func DeletePost(postId string) error {
 	if ok {
 		post.Deleted = true
 		index.Index[postId] = post
+		voteCount := index.IndexCountLikes[postId]
 
-		// Remove item from previous popularity spaces
-		for i, s := range index.IndexPopularityLikes[post.Upvotes-1] {
+		// Remove item from popularity spaces
+		for i, s := range index.IndexPopularityLikes[voteCount] {
 			if s == post.Id {
 				// We found our post in the old spot, now remove
-				index.IndexPopularityLikes[post.Upvotes-1][i] = index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] // Copy last element to index i.
-				index.IndexPopularityLikes[post.Upvotes-1][len(index.IndexPopularityLikes[post.Upvotes-1])-1] = ""                                            // Erase last element (write zero value).
-				index.IndexPopularityLikes[post.Upvotes-1] = index.IndexPopularityLikes[post.Upvotes-1][:len(index.IndexPopularityLikes[post.Upvotes-1])-1]   // Truncate slice.
+				index.IndexPopularityLikes[voteCount][i] = index.IndexPopularityLikes[voteCount][len(index.IndexPopularityLikes[voteCount])-1] // Copy last element to index i.
+				index.IndexPopularityLikes[voteCount][len(index.IndexPopularityLikes[voteCount])-1] = ""                                       // Erase last element (write zero value).
+				index.IndexPopularityLikes[voteCount] = index.IndexPopularityLikes[voteCount][:len(index.IndexPopularityLikes[voteCount])-1]   // Truncate slice.
 			}
 		}
 

@@ -30,10 +30,8 @@
   });
 
   function goHome() {
-    if (localUserState === UserState.SignedIn)
-      goto("/home");
-    else
-      goto("/");
+    if (localUserState === UserState.SignedIn) goto("/home");
+    else goto("/");
   }
 
   function signOutClick() {
@@ -64,7 +62,7 @@
       <img class="logo" src={LogoPath} alt="Site logo" />
     </div>
     <!-- {#if localUserState == UserState.SignedIn} -->
-      <SearchBox search={searchPosts} on:click={searchClick} />
+    <SearchBox search={searchPosts} on:click={searchClick} />
     <!-- {:else}
       <div style="height: 64px"></div>
     {/if} -->
@@ -103,18 +101,15 @@
 
 <style>
   .header {
-    height: 57px;
-    background-color: rgba(255, 255, 255, 1);
-    /* width: 100vw; */
-    border-bottom: solid 1px rgba(242, 242, 242, 1);
-    padding: 0 24px;
+    height: var(--header-height);
+    background-color: var(--main-background-color);
+    border-bottom: var(--header-bottom-border);
+    padding: var(--header-padding);
     align-items: center;
     display: flex;
     position: sticky;
     top: 0;
     z-index: 1;
-    /* top: 16px;
-    position: relative; */
   }
 
   .headersmall {
