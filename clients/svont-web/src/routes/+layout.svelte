@@ -21,6 +21,7 @@
 <style>
   :root {
     --main-background-color: rgba(255, 255, 255, 1);
+
     --header-height: 57px;
     --header-padding: 0 24px;
     --header-bottom-border: solid 1px rgba(242, 242, 242, 1);

@@ -486,8 +486,13 @@ func DeletePost(postId string) error {
 			searchIndex.Delete(postId)
 		}
 
-		// Add to deleted index
-		index.IndexDeleted[postId] = post.Index
+		// Remove from drafts
+		delete(index.IndexDrafts, postId)
+
+		// Add to deleted index, if it wasn't a draft
+		if !post.Draft {
+			index.IndexDeleted[postId] = post.Index
+		}
 	}
 
 	postsMutex.Unlock()

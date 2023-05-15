@@ -46,6 +46,13 @@
             Authorization: "Bearer " + token,
           },
         },
+        autosave: {
+          save(editor) {
+            //return saveData( editor.getData() );
+            alert("save!");
+            return true;
+          },
+        },
       }).then((newEditor) => {
         editor = newEditor;
         setLoadedStatus(true);

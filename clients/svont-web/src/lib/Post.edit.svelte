@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { onDestroy } from "svelte";
   import Editor, { getData, setData } from "./Editor.CKBBlock.svelte";
   import TagBox from "./Tag.box.svelte";
   import { appService } from "./DataService";
@@ -15,8 +16,10 @@
 
   export let post: Post = undefined;
   let tags: string[] = [];
+  let isNewPost: boolean = true;
 
   if (post) {
+    isNewPost = false;
     setData(post.content);
     if (post.header.tags && post.header.tags.length > 0)
       tags = post.header.tags;
@@ -33,6 +36,13 @@
       post = newPost;
     });
   }
+
+  onDestroy(() => {
+    if (isNewPost && post.header.title == "") {
+      // This post was never really started, so delete before leaving...
+      appService.DeletePost(post.header.id);
+    }
+  });
 
   export function submit() {
     var myForm: HTMLFormElement = document.getElementById(
