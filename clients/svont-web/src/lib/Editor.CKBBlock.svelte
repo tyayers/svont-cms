@@ -33,7 +33,7 @@
 
   export let imageUploadPath: string = "";
 
-  // import "../assets/ckeditor"
+  export let saveDraft: () => void;
 
   function initCkeditor() {
     appService.GetIdToken().then((token) => {
@@ -49,7 +49,7 @@
         autosave: {
           save(editor) {
             //return saveData( editor.getData() );
-            alert("save!");
+            if (saveDraft) saveDraft();
             return true;
           },
         },

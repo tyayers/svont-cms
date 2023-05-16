@@ -13,23 +13,34 @@
 
   let form;
 
+  let statusText: string = "";
+
   function submitClick(event) {
     if (form) {
       form.submit();
     }
   }
+
+  function statusUpdate(newText: string) {
+    statusText = newText;
+  }
 </script>
 
 <div class="newpost">
-  <Header small={true} actionType={HeaderButton.Submit} on:submit={submitClick} />
+  <Header
+    small={true}
+    showSearch={false}
+    {statusText}
+    actionType={HeaderButton.Submit}
+    on:submit={submitClick}
+  />
 
-  <PostNew bind:this={form} post={data} />
+  <PostNew bind:this={form} post={data} {statusUpdate} />
 </div>
 
 <style>
-.newpost {
-  width: 100vw;
-  height: 100vh;
-}
+  .newpost {
+    width: 100vw;
+    height: 100vh;
+  }
 </style>
-

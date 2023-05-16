@@ -6,21 +6,29 @@
 
   let form;
 
+  let statusText: string = "";
+
   function submitClick(event) {
     if (form) {
       form.submit();
     }
+  }
+
+  function statusUpdate(newText: string) {
+    statusText = newText;
   }
 </script>
 
 <div class="newpost">
   <Header
     small={true}
+    showSearch={false}
+    {statusText}
     actionType={HeaderButton.Submit}
     on:submit={submitClick}
   />
 
-  <PostNew bind:this={form} />
+  <PostNew bind:this={form} {statusUpdate} />
 </div>
 
 <style>

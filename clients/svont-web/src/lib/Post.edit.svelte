@@ -8,13 +8,15 @@
   import type { Post, AppUser, SearchResult } from "./DataInterface";
   import { append } from "svelte/internal";
 
+  export let post: Post = undefined;
+  export let statusUpdate: (status: string) => void;
+
   let localUser: AppUser = undefined;
 
   appService.user.subscribe((value) => {
     localUser = value;
   });
 
-  export let post: Post = undefined;
   let tags: string[] = [];
   let isNewPost: boolean = true;
 
@@ -44,7 +46,7 @@
     }
   });
 
-  export function submit() {
+  export function submit(draft: boolean = false) {
     var myForm: HTMLFormElement = document.getElementById(
       "new_post_form"
     ) as HTMLFormElement;
@@ -71,9 +73,13 @@
     if (tempTags) formData.set("tags", tempTags);
 
     if (post) {
-      formData.set("draft", "false");
+      if (draft) formData.set("draft", "true");
+      else formData.set("draft", "false");
+
+      //let newDraft: boolean = draft;
       appService.UpdatePost(post.header.id, formData).then((post: Post) => {
-        goto("/home");
+        if (!draft) goto("/posts/" + post.header.id);
+        else if (statusUpdate) statusUpdate("Draft saved");
       });
     } else {
       // Set user for new post
@@ -82,7 +88,8 @@
       formData.set("authorProfilePic", localUser.photoURL);
 
       appService.CreatePost(formData).then((post: Post) => {
-        goto("/home");
+        goto("/posts/" + post.header.id);
+        //goto("/home");
       });
     }
   }
@@ -97,6 +104,11 @@
 
   function addTag(event) {
     tags.push(event.detail.name);
+  }
+
+  function saveDraft() {
+    if (statusUpdate) statusUpdate("Saving draft...");
+    submit(true);
   }
 </script>
 
@@ -128,7 +140,10 @@
     <div>
       <br />
       {#if post}
-        <Editor imageUploadPath={"/posts/" + post.header.id + "/files"} />
+        <Editor
+          imageUploadPath={"/posts/" + post.header.id + "/files"}
+          {saveDraft}
+        />
       {/if}
     </div>
     <br />

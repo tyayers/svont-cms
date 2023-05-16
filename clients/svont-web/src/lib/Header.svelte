@@ -15,7 +15,9 @@
   // Event dispatcher for all broadcasts to parent
   const dispatch = createEventDispatcher();
 
-  export let small = false;
+  export let small: boolean = false;
+  export let showSearch: boolean = true;
+  export let statusText: string = "";
   export let actionType: HeaderButton = HeaderButton.NewPost;
 
   let localUser: AppUser = undefined;
@@ -58,14 +60,15 @@
 
 <div class:headersmall={small === true} class="header">
   <div class="left">
-    <div on:click={goHome} on:keydown={goHome}>
+    <div class="logo_box" on:click={goHome} on:keydown={goHome}>
       <img class="logo" src={LogoPath} alt="Site logo" />
     </div>
-    <!-- {#if localUserState == UserState.SignedIn} -->
-    <SearchBox search={searchPosts} on:click={searchClick} />
-    <!-- {:else}
-      <div style="height: 64px"></div>
-    {/if} -->
+    {#if showSearch}
+      <SearchBox search={searchPosts} on:click={searchClick} />
+    {/if}
+    {#if statusText}
+      <span class="status_text">{statusText}</span>
+    {/if}
   </div>
   <div class="right">
     {#if localUserState == UserState.SignedOut}
@@ -129,11 +132,27 @@
     right: 40px;
   }
 
+  .logo_box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 34px;
+  }
+
   .logo {
     position: relative;
-    top: 10px;
+    /* top: 10px; */
     height: 44px;
     cursor: pointer;
+  }
+
+  .status_text {
+    /* height: var(--header-height); */
+    color: gray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 14px;
   }
 
   .post {

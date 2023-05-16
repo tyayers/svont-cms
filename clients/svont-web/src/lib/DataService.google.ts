@@ -282,7 +282,7 @@ export class DataServiceGoogle implements DataService {
               return response.json();
             })
             .then((data) => {
-              this.Navigate("/");
+              resolve(data);
             });
         })
         .catch((error) => {
