@@ -81,6 +81,10 @@ type Provider interface {
 
 	GetFile(postId string, fileName string) ([]byte, error)
 	DeletePost(postId string) error
+
+	UploadFile(fileName string, content []byte) error
+	DownloadFile(fileName string) ([]byte, error)
+	DeleteFile(fileName string) error
 }
 
 type PersistMode int

@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -18,9 +17,8 @@ import (
 )
 
 type GCSProvider struct {
-	IndexWriteMutex sync.Mutex
-	BucketName      string
-	BucketPath      string
+	BucketName string
+	BucketPath string
 }
 
 // Initialize loads persisted data structures from storage, if available
@@ -37,37 +35,37 @@ func (provider *GCSProvider) Initialize() PostIndex {
 		IndexCountLikes: map[string]int{}, IndexCountComments: map[string]int{},
 		IndexCountViews: map[string]int{}}
 
-	postBytes, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_headers.json")
+	postBytes, err := provider.DownloadFile("index_headers.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.Index)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_time.json")
+	postBytes, err = provider.DownloadFile("index_time.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexTime)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_drafts.json")
+	postBytes, err = provider.DownloadFile("index_drafts.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexDrafts)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_deleted.json")
+	postBytes, err = provider.DownloadFile("index_deleted.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexDeleted)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_tags.json")
+	postBytes, err = provider.DownloadFile("index_tags.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexTags)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_popularity_likes.json")
+	postBytes, err = provider.DownloadFile("index_popularity_likes.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexPopularityLikes)
@@ -77,7 +75,7 @@ func (provider *GCSProvider) Initialize() PostIndex {
 		index.IndexPopularityLikes[0] = []string{}
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_popularity_comments.json")
+	postBytes, err = provider.DownloadFile("index_popularity_comments.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexPopularityComments)
@@ -87,7 +85,7 @@ func (provider *GCSProvider) Initialize() PostIndex {
 		index.IndexPopularityComments[0] = []string{}
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_popularity_views.json")
+	postBytes, err = provider.DownloadFile("index_popularity_views.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexPopularityViews)
@@ -97,28 +95,25 @@ func (provider *GCSProvider) Initialize() PostIndex {
 		index.IndexPopularityViews[0] = []string{}
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_count_likes.json")
+	postBytes, err = provider.DownloadFile("index_count_likes.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexCountLikes)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_count_comments.json")
+	postBytes, err = provider.DownloadFile("index_count_comments.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexCountComments)
 	}
 
-	postBytes, err = downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"index_count_views.json")
+	postBytes, err = provider.DownloadFile("index_count_views.json")
 
 	if err == nil {
 		json.Unmarshal(postBytes, &index.IndexCountViews)
 	}
 
-	provider.IndexWriteMutex = sync.Mutex{}
-
 	return index
-
 }
 
 // Finalize writes the data structures to storage
@@ -132,7 +127,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_headers.json", jsonData)
+		provider.UploadFile("index_headers.json", jsonData)
 	}
 
 	// Persist time index
@@ -143,7 +138,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_time.json", jsonData)
+		provider.UploadFile("index_time.json", jsonData)
 	}
 
 	// Persist drafts index
@@ -154,7 +149,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_drafts.json", jsonData)
+		provider.UploadFile("index_drafts.json", jsonData)
 	}
 
 	// Persist deleted index
@@ -165,7 +160,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_deleted.json", jsonData)
+		provider.UploadFile("index_deleted.json", jsonData)
 	}
 
 	// Persist tag index
@@ -176,7 +171,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_tags.json", jsonData)
+		provider.UploadFile("index_tags.json", jsonData)
 	}
 
 	// Persist popularity likes index
@@ -187,7 +182,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_popularity_likes.json", jsonData)
+		provider.UploadFile("index_popularity_likes.json", jsonData)
 	}
 
 	// Persist popularity comments index
@@ -198,7 +193,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_popularity_comments.json", jsonData)
+		provider.UploadFile("index_popularity_comments.json", jsonData)
 	}
 
 	// Persist popularity views index
@@ -209,7 +204,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_popularity_views.json", jsonData)
+		provider.UploadFile("index_popularity_views.json", jsonData)
 	}
 
 	// Persist count likes index
@@ -220,7 +215,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_count_likes.json", jsonData)
+		provider.UploadFile("index_count_likes.json", jsonData)
 	}
 
 	// Persist count comments index
@@ -231,7 +226,7 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_count_comments.json", jsonData)
+		provider.UploadFile("index_count_comments.json", jsonData)
 	}
 
 	// Persist popularity likes index
@@ -242,14 +237,14 @@ func (provider *GCSProvider) Finalize(persistMode PersistMode, index PostIndex) 
 			return
 		}
 
-		streamFileUpload(provider.BucketName, provider.BucketPath+"index_count_views.json", jsonData)
+		provider.UploadFile("index_count_views.json", jsonData)
 	}
 }
 
 // Returns the post specified by postId.
 func (provider *GCSProvider) GetPost(postId string) *Post {
 
-	dat, _ := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"data/"+postId+"/post.json")
+	dat, _ := provider.DownloadFile("data/" + postId + "/post.json")
 
 	var post Post
 	json.Unmarshal(dat, &post)
@@ -261,10 +256,10 @@ func (provider *GCSProvider) GetPost(postId string) *Post {
 func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string][]byte) error {
 
 	jsonData, _ := json.Marshal(newPost)
-	err := streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+newPost.Header.Id+"/post.json", jsonData)
+	err := provider.UploadFile("data/"+newPost.Header.Id+"/post.json", jsonData)
 
 	for k, v := range fileAttachments {
-		err = streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+newPost.Header.Id+"/"+k, v)
+		err = provider.UploadFile("data/"+newPost.Header.Id+"/"+k, v)
 	}
 
 	if err != nil {
@@ -278,10 +273,10 @@ func (provider *GCSProvider) CreatePost(newPost Post, fileAttachments map[string
 func (provider *GCSProvider) UpdatePost(post Post, fileAttachments map[string][]byte) error {
 
 	jsonData, _ := json.Marshal(post)
-	err := streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+post.Header.Id+"/post.json", jsonData)
+	err := provider.UploadFile("data/"+post.Header.Id+"/post.json", jsonData)
 
 	for k, v := range fileAttachments {
-		err = streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+post.Header.Id+"/"+k, v)
+		err = provider.UploadFile("data/"+post.Header.Id+"/"+k, v)
 	}
 
 	if err != nil {
@@ -297,7 +292,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"data/"+postId+"/comments.json")
+	dat, err := provider.DownloadFile("data/" + postId + "/comments.json")
 
 	if err != nil {
 		postComments = *new([]PostComment)
@@ -321,7 +316,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 	}
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+postId+"/comments.json", jsonData)
+	err = provider.UploadFile("data/"+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -334,7 +329,7 @@ func (provider *GCSProvider) CreateComment(postId string, parentCommentId string
 func (provider *GCSProvider) GetComments(postId string) (*[]PostComment, error) {
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"data/"+postId+"/comments.json")
+	dat, err := provider.DownloadFile("data/" + postId + "/comments.json")
 
 	if err != nil {
 		postComments = *new([]PostComment)
@@ -355,7 +350,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 
 	var postComments []PostComment = nil
 
-	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"data/"+postId+"/comments.json")
+	dat, err := provider.DownloadFile("data/" + postId + "/comments.json")
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Comments for post %s not found!", postId))
@@ -370,7 +365,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 	upvotedComment := UpvoteComment(&postComments, commentId)
 
 	jsonData, _ := json.Marshal(postComments)
-	err = streamFileUpload(provider.BucketName, provider.BucketPath+"data/"+postId+"/comments.json", jsonData)
+	err = provider.UploadFile("data/"+postId+"/comments.json", jsonData)
 
 	if err != nil {
 		return nil, err
@@ -382,7 +377,7 @@ func (provider *GCSProvider) UpvoteComment(postId string, commentId string, user
 // Gets the file
 func (provider *GCSProvider) GetFile(postId string, fileName string) ([]byte, error) {
 
-	dat, err := downloadFileIntoMemory(provider.BucketName, provider.BucketPath+"data/"+postId+"/"+fileName)
+	dat, err := provider.DownloadFile("data/" + postId + "/" + fileName)
 
 	if err != nil {
 		return nil, err
@@ -394,7 +389,7 @@ func (provider *GCSProvider) GetFile(postId string, fileName string) ([]byte, er
 // Deletes the post identified by postId
 func (provider *GCSProvider) DeletePost(postId string) error {
 
-	err := deleteObject(provider.BucketName, provider.BucketPath+"data/"+postId)
+	err := provider.DeleteFile("data/" + postId)
 	if err != nil {
 		fmt.Printf("could not delete post %s: %s\n", postId, err)
 		return err
@@ -403,7 +398,8 @@ func (provider *GCSProvider) DeletePost(postId string) error {
 	}
 }
 
-func streamFileUpload(bucketName string, name string, content []byte) error {
+// Uploads a file
+func (provider *GCSProvider) UploadFile(fileName string, content []byte) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -417,7 +413,7 @@ func streamFileUpload(bucketName string, name string, content []byte) error {
 	defer cancel()
 
 	// Upload an object with storage.Writer.
-	wc := client.Bucket(bucketName).Object(name).NewWriter(ctx)
+	wc := client.Bucket(provider.BucketName).Object(provider.BucketPath + fileName).NewWriter(ctx)
 	wc.ChunkSize = 0 // note retries are not supported for chunk size 0.
 
 	if _, err = io.Copy(wc, buf); err != nil {
@@ -431,7 +427,8 @@ func streamFileUpload(bucketName string, name string, content []byte) error {
 	return nil
 }
 
-func downloadFileIntoMemory(bucketName string, object string) ([]byte, error) {
+// Downloads a file
+func (provider *GCSProvider) DownloadFile(fileName string) ([]byte, error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -442,9 +439,9 @@ func downloadFileIntoMemory(bucketName string, object string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
-	rc, err := client.Bucket(bucketName).Object(object).NewReader(ctx)
+	rc, err := client.Bucket(provider.BucketName).Object(provider.BucketPath + fileName).NewReader(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Object(%q).NewReader: %v", object, err)
+		return nil, fmt.Errorf("Object(%q).NewReader: %v", provider.BucketPath+fileName, err)
 	}
 	defer rc.Close()
 
@@ -455,7 +452,8 @@ func downloadFileIntoMemory(bucketName string, object string) ([]byte, error) {
 	return data, nil
 }
 
-func deleteObject(bucketName string, name string) error {
+// Deletes a file
+func (provider *GCSProvider) DeleteFile(fileName string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -466,9 +464,9 @@ func deleteObject(bucketName string, name string) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	b := client.Bucket(bucketName)
+	b := client.Bucket(provider.BucketName)
 
-	query := &storage.Query{Prefix: name}
+	query := &storage.Query{Prefix: provider.BucketPath + fileName}
 	var names []string
 	it := b.Objects(ctx, query)
 	for {
@@ -482,12 +480,12 @@ func deleteObject(bucketName string, name string) error {
 		names = append(names, attrs.Name)
 		fmt.Printf("found blob " + attrs.Name)
 
-		o := client.Bucket(bucketName).Object(attrs.Name)
+		o := client.Bucket(provider.BucketName).Object(attrs.Name)
 		if err := o.Delete(ctx); err != nil {
-			return fmt.Errorf("Object(%q).Delete: %v", name, err)
+			return fmt.Errorf("Object(%q).Delete: %v", fileName, err)
 		}
 
-		fmt.Printf("Blob %v deleted.\n", name)
+		fmt.Printf("Blob %v deleted.\n", fileName)
 	}
 
 	return nil
