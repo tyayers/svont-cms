@@ -78,8 +78,10 @@
 
       //let newDraft: boolean = draft;
       appService.UpdatePost(post.header.id, formData).then((post: Post) => {
-        if (!draft) goto("/posts/" + post.header.id);
-        else if (statusUpdate) statusUpdate("Draft saved");
+        if (!draft) {
+          //goto("/posts/" + post.header.id);
+          goto("/home");
+        } else if (statusUpdate) statusUpdate("Draft saved");
       });
     } else {
       // Set user for new post
@@ -88,8 +90,8 @@
       formData.set("authorProfilePic", localUser.photoURL);
 
       appService.CreatePost(formData).then((post: Post) => {
-        goto("/posts/" + post.header.id);
-        //goto("/home");
+        //goto("/posts/" + post.header.id);
+        goto("/home");
       });
     }
   }
@@ -123,7 +125,7 @@
         id="title"
         placeholder="Title"
         required
-        value={post.header.title}
+        bind:value={post.header.title}
         autofocus
       />
     {:else}

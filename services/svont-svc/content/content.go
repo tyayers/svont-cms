@@ -24,15 +24,15 @@ var searchIndex bleve.Index
 var tagIndex bleve.Index
 
 // Local data provider, uncomment to test locally with files (in localdata dir)
-var dataProvider data.Provider = &data.LocalProvider{}
+// var dataProvider data.Provider = &data.LocalProvider{}
 
 // Google Cloud Storage provider, uncomment to use GCS as storage provider
-// var dataProvider data.Provider = &data.GCSProvider{}
+var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize(force bool) {
 	fmt.Println("Starting loading indexes...")
 	start := time.Now()
-	index = dataProvider.Initialize()
+	index = InitializeProvider()
 
 	elapsed := time.Since(start)
 	fmt.Printf("Finished loading indexes in {%s}\n", elapsed)
@@ -121,7 +121,7 @@ func Finalize(persistMode data.PersistMode) {
 	fmt.Printf("Starting finalizing indexes for persist mode %d.\n", persistMode)
 	start := time.Now()
 
-	dataProvider.Finalize(persistMode, index)
+	FinalizeProvider(persistMode, index)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Finished finalizing indexes with persist mode %d in {%s}\n", persistMode, elapsed)
@@ -213,7 +213,7 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostHeader {
 }
 
 func GetPost(postId string) *data.Post {
-	var post = dataProvider.GetPost(postId)
+	var post = GetPostFromProvider(postId)
 	post.Header = index.Index[postId]
 	post.Header.Upvotes = index.IndexCountLikes[postId]
 	post.Header.CommentCount = index.IndexCountComments[postId]
@@ -287,7 +287,7 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	// Persist changes to storage in the background
 	go Finalize(data.PersistAll)
 
-	err := dataProvider.CreatePost(*newPost, files)
+	err := CreatePostForProvider(*newPost, files)
 
 	if err != nil {
 		return err
@@ -337,17 +337,18 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	if header.Draft && !updatedPost.Header.Draft {
 		// post is no longer in draft, remove from draft index
 		delete(index.IndexDrafts, header.Id)
+		header.Draft = updatedPost.Header.Draft
+
+		// Persist changes to storage in the background
+		go Finalize(data.PersistAll)
 	}
-	header.Draft = updatedPost.Header.Draft
 
 	index.Index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
-	// Persist changes to storage in the background
-	go Finalize(data.PersistAll)
 
 	updatedPost.Header = header
 
-	err := dataProvider.UpdatePost(*updatedPost, files)
+	err := UpdatePostForProvider(*updatedPost, files)
 
 	if err != nil {
 		return err
@@ -416,7 +417,7 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Post %s not found!", postId))
 	} else {
-		result, err := dataProvider.CreateComment(postId, parentCommentId, newComment)
+		result, err := CreateComment(postId, parentCommentId, newComment)
 
 		if err == nil {
 			postsMutex.Lock()
@@ -436,17 +437,17 @@ func AddCommentToPost(postId string, parentCommentId string, authorId string, au
 
 // Gets all of the comments for a post
 func GetComments(postId string) (*[]data.PostComment, error) {
-	return dataProvider.GetComments(postId)
+	return GetCommentsFromProvider(postId)
 }
 
 // Upvotes a specific comment
 func UpvoteComment(postId string, commentId string, userEmail string) (*data.PostComment, error) {
-	return dataProvider.UpvoteComment(postId, commentId, userEmail)
+	return UpvoteCommentForProvider(postId, commentId, userEmail)
 }
 
 // Gets a file attachment for a post
 func GetFileForPost(postId string, fileName string) ([]byte, error) {
-	return dataProvider.GetFile(postId, fileName)
+	return GetFile(postId, fileName)
 }
 
 // Deletes a post
@@ -499,7 +500,7 @@ func DeletePost(postId string) error {
 	// Persist changes to storage in the background
 	go Finalize(data.PersistAll)
 
-	return dataProvider.DeletePost(postId)
+	return DeletePostForProvider(postId)
 }
 
 // Searches posts

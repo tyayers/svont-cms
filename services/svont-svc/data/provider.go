@@ -20,7 +20,7 @@ type PostHeader struct {
 	Summary           string   `json:"summary"`
 	Image             string   `json:"image"`
 	Draft             bool     `json:"draft"`
-	Deleted           bool     `jason:"deleted"`
+	Deleted           bool     `json:"deleted"`
 	Tags              []string `json:"tags"`
 	AuthorId          string   `json:"authorId"`
 	AuthorDisplayName string   `json:"authorDisplayName"`
@@ -69,19 +69,9 @@ type ImageUploadResult struct {
 }
 
 type Provider interface {
-	Initialize() (index PostIndex)
+	Initialize()
 	Finalize(peristMode PersistMode, index PostIndex)
-
-	GetPost(postId string) *Post
-	CreatePost(newPost Post, fileAttachments map[string][]byte) error
-	UpdatePost(post Post, fileAttachments map[string][]byte) error
-	CreateComment(postId string, parentCommentId string, postComment *PostComment) (*[]PostComment, error)
-	GetComments(postId string) (*[]PostComment, error)
-	UpvoteComment(postId string, commentId string, userEmail string) (*PostComment, error)
-
-	GetFile(postId string, fileName string) ([]byte, error)
-	DeletePost(postId string) error
-
+	CreateDir(dirName string) error
 	UploadFile(fileName string, content []byte) error
 	DownloadFile(fileName string) ([]byte, error)
 	DeleteFile(fileName string) error
