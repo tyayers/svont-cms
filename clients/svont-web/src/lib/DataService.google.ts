@@ -221,10 +221,10 @@ export class DataServiceGoogle implements DataService {
     });
   }
 
-  GetPost(postId: string): Promise<Post> {
+  GetPost(postId: string, draft = false): Promise<Post> {
     return new Promise<Post>((resolve, reject) => {
       this.GetIdToken().then((idToken) => {
-        fetch(this.defaultServer + "/posts/" + postId, {
+        fetch(this.defaultServer + "/posts/" + postId + "?draft=" + draft, {
           method: "GET",
           headers: {
             Accept: "application/json",

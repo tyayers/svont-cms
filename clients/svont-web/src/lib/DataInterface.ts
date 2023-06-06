@@ -23,7 +23,7 @@ export interface DataService {
     start: number,
     limit: number
   ): Promise<PostOverview[]>;
-  GetPost(postId: string): Promise<Post>;
+  GetPost(postId: string, draft: boolean): Promise<Post>;
   CreatePost(postData: FormData): Promise<Post>;
   UpdatePost(postId: string, postData: FormData): Promise<Post>;
   DeletePost(postId: string): Promise<boolean>;

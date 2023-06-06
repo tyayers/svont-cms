@@ -5,5 +5,5 @@ import { appService } from "../../../../lib/DataService";
 export const load: PageLoad = (({ params }) => {
   console.log("enter post load for " + params.slug);
 
-  return appService.GetPost(params.slug);
+  return appService.GetPost(params.slug, true);
 }) satisfies PageLoad;

@@ -94,8 +94,9 @@ func searchTags(c *gin.Context) {
 
 func getPost(c *gin.Context) {
 	postId := c.Param("id")
+	draft, _ := strconv.ParseBool(c.Query("draft"))
 
-	post := content.GetPost(postId)
+	post := content.GetPost(postId, draft)
 	c.IndentedJSON(http.StatusOK, post)
 }
 
@@ -153,7 +154,7 @@ func updatePost(c *gin.Context) {
 	user_id := c.GetString("user_id")
 
 	// post := content.GetPostOverview(postId)
-	post := content.GetPost(postId)
+	post := content.GetPost(postId, false)
 
 	if post.Header.AuthorId != user_id {
 		c.String(401, fmt.Sprintf("User not authorized to delete post."))
@@ -258,7 +259,6 @@ func addCommentToPost(c *gin.Context) {
 
 		c.IndentedJSON(http.StatusCreated, newComment)
 	}
-
 }
 
 func getCommentsForPost(c *gin.Context) {
@@ -294,7 +294,7 @@ func attachFileToPost(c *gin.Context) {
 	postId := c.Param("id")
 	user_id := c.GetString("user_id")
 
-	post := content.GetPost(postId)
+	post := content.GetPost(postId, false)
 
 	if post.Header.AuthorId != user_id {
 		c.String(401, fmt.Sprintf("User not authorized to update post."))

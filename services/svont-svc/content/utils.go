@@ -229,12 +229,31 @@ func FinalizeProvider(persistMode data.PersistMode, index data.PostIndex) {
 	}
 }
 
-func GetPostFromProvider(postId string) *data.Post {
-
-	dat, _ := dataProvider.DownloadFile("data/" + postId + "/post.json")
-
+func GetPostFromProvider(postId string, draft bool) *data.Post {
 	var post data.Post
-	json.Unmarshal(dat, &post)
+
+	if draft {
+		dat, err := dataProvider.DownloadFile("data/" + postId + "/post_draft.json")
+
+		if err != nil {
+			dat, err := dataProvider.DownloadFile("data/" + postId + "/post.json")
+
+			if err == nil {
+				json.Unmarshal(dat, &post)
+			}
+		} else {
+			json.Unmarshal(dat, &post)
+		}
+	} else {
+		dat, err := dataProvider.DownloadFile("data/" + postId + "/post.json")
+
+		if err == nil {
+			json.Unmarshal(dat, &post)
+		}
+	}
+
+	
+	
 
 	return &post
 }
@@ -247,7 +266,12 @@ func CreatePostForProvider(newPost data.Post, fileAttachments map[string][]byte)
 	}
 
 	jsonData, _ := json.Marshal(newPost)
-	err = dataProvider.UploadFile("data/"+newPost.Header.Id+"/post.json", jsonData)
+
+	if newPost.Header.Draft {
+		err = dataProvider.UploadFile("data/"+newPost.Header.Id+"/post_draft.json", jsonData)
+	} else {
+		err = dataProvider.UploadFile("data/"+newPost.Header.Id+"/post.json", jsonData)
+	}
 
 	for k, v := range fileAttachments {
 		err = dataProvider.UploadFile("data/"+newPost.Header.Id+"/"+k, v)
@@ -260,10 +284,15 @@ func CreatePostForProvider(newPost data.Post, fileAttachments map[string][]byte)
 	}
 }
 
-func UpdatePostForProvider(post data.Post, fileAttachments map[string][]byte) error {
+func UpdatePostForProvider(post data.Post, fileAttachments map[string][]byte, draft bool) error {
 
-	jsonData, _ := json.Marshal(post)
-	err := dataProvider.UploadFile("data/"+post.Header.Id+"/post.json", jsonData)
+	jsonData, err := json.Marshal(post)
+	
+	if draft {
+		err = dataProvider.UploadFile("data/"+post.Header.Id+"/post_draft.json", jsonData)
+	} else {
+		err = dataProvider.UploadFile("data/"+post.Header.Id+"/post.json", jsonData)
+	}
 
 	for k, v := range fileAttachments {
 		err = dataProvider.UploadFile("data/"+post.Header.Id+"/"+k, v)

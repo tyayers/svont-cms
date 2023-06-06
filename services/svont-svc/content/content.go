@@ -24,10 +24,10 @@ var searchIndex bleve.Index
 var tagIndex bleve.Index
 
 // Local data provider, uncomment to test locally with files (in localdata dir)
-// var dataProvider data.Provider = &data.LocalProvider{}
+var dataProvider data.Provider = &data.LocalProvider{}
 
 // Google Cloud Storage provider, uncomment to use GCS as storage provider
-var dataProvider data.Provider = &data.GCSProvider{}
+// var dataProvider data.Provider = &data.GCSProvider{}
 
 func Initialize(force bool) {
 	fmt.Println("Starting loading indexes...")
@@ -212,8 +212,8 @@ func GetTaggedPosts(tagName string, start int, limit int) []data.PostHeader {
 	return taggedPosts
 }
 
-func GetPost(postId string) *data.Post {
-	var post = GetPostFromProvider(postId)
+func GetPost(postId string, draft bool) *data.Post {
+	var post = GetPostFromProvider(postId, draft)
 	post.Header = index.Index[postId]
 	post.Header.Upvotes = index.IndexCountLikes[postId]
 	post.Header.CommentCount = index.IndexCountComments[postId]
@@ -324,7 +324,11 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	postsMutex.Lock()
 	header := index.Index[updatedPost.Header.Id]
 	header.Title = updatedPost.Header.Title
-	header.Summary = updatedPost.Header.Summary
+
+	if !updatedPost.Header.Draft {
+		header.Summary = updatedPost.Header.Summary
+	}
+	
 	if header.Image == "" {
 		header.Image = updatedPost.Header.Image
 	}
@@ -339,6 +343,9 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 		delete(index.IndexDrafts, header.Id)
 		header.Draft = updatedPost.Header.Draft
 
+		// delete draft post file
+		dataProvider.DeleteFile("data/" + header.Id + "/post_draft.json")
+
 		// Persist changes to storage in the background
 		go Finalize(data.PersistAll)
 	}
@@ -346,9 +353,10 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	index.Index[updatedPost.Header.Id] = header
 	postsMutex.Unlock()
 
+	isDraft := updatedPost.Header.Draft
 	updatedPost.Header = header
 
-	err := UpdatePostForProvider(*updatedPost, files)
+	err := UpdatePostForProvider(*updatedPost, files, isDraft)
 
 	if err != nil {
 		return err
