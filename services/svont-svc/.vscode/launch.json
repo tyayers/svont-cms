@@ -9,7 +9,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${fileDirname}",
+      "program": "${workspaceFolder}/main.go",
       "env": {
         "GCLOUD_PROJECT": "cloud32x",
         "BUCKET_NAME": "cms_tg6qp4dq8",

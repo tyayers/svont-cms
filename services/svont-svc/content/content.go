@@ -256,32 +256,32 @@ func CreatePost(newPost *data.Post, attachments []multipart.FileHeader) error {
 	// Add to draft index
 	if newPost.Header.Draft {
 		index.IndexDrafts[newPost.Header.Id] = newPost.Header.Index
+	} else {
+		// Add to popularity indexes
+		index.IndexPopularityLikes[0] = append(index.IndexPopularityLikes[0], newPost.Header.Id)
+		index.IndexPopularityComments[0] = append(index.IndexPopularityComments[0], newPost.Header.Id)
+		index.IndexPopularityViews[0] = append(index.IndexPopularityViews[0], newPost.Header.Id)
+
+		// Add to tag index
+		if newPost.Header.Tags != nil {
+			for _, tag := range newPost.Header.Tags {
+
+				if tag != "" {
+					_, ok := index.IndexTags[tag]
+
+					if !ok {
+						index.IndexTags[tag] = map[int]string{}
+						tagIndex.Index(tag, tag)
+					}
+
+					index.IndexTags[tag][newPost.Header.Index] = newPost.Header.Id
+				}
+			}
+		}
 	}
 
 	// Add to id index
 	index.Index[newPost.Header.Id] = newPost.Header
-
-	// Add to popularity indexes
-	index.IndexPopularityLikes[0] = append(index.IndexPopularityLikes[0], newPost.Header.Id)
-	index.IndexPopularityComments[0] = append(index.IndexPopularityComments[0], newPost.Header.Id)
-	index.IndexPopularityViews[0] = append(index.IndexPopularityViews[0], newPost.Header.Id)
-
-	// Add to tag index
-	if newPost.Header.Tags != nil {
-		for _, tag := range newPost.Header.Tags {
-
-			if tag != "" {
-				_, ok := index.IndexTags[tag]
-
-				if !ok {
-					index.IndexTags[tag] = map[int]string{}
-					tagIndex.Index(tag, tag)
-				}
-
-				index.IndexTags[tag][newPost.Header.Index] = newPost.Header.Id
-			}
-		}
-	}
 
 	postsMutex.Unlock()
 	// Persist changes to storage in the background
@@ -328,15 +328,10 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 	if !updatedPost.Header.Draft {
 		header.Summary = updatedPost.Header.Summary
 	}
-	
+
 	if header.Image == "" {
 		header.Image = updatedPost.Header.Image
 	}
-
-	UpdateTags(header.Id, header.Index, header.Tags, updatedPost.Header.Tags)
-	header.Tags = updatedPost.Header.Tags
-	header.FileCount = updatedPost.Header.FileCount
-	header.Updated = updatedPost.Header.Updated
 
 	if header.Draft && !updatedPost.Header.Draft {
 		// post is no longer in draft, remove from draft index
@@ -346,8 +341,35 @@ func UpdatePost(updatedPost *data.Post, attachments []multipart.FileHeader) erro
 		// delete draft post file
 		dataProvider.DeleteFile("data/" + header.Id + "/post_draft.json")
 
+		// Add to popularity indexes
+		index.IndexPopularityLikes[0] = append(index.IndexPopularityLikes[0], updatedPost.Header.Id)
+		index.IndexPopularityComments[0] = append(index.IndexPopularityComments[0], updatedPost.Header.Id)
+		index.IndexPopularityViews[0] = append(index.IndexPopularityViews[0], updatedPost.Header.Id)
+
+		// Add to tag index
+		if updatedPost.Header.Tags != nil {
+			for _, tag := range updatedPost.Header.Tags {
+
+				if tag != "" {
+					_, ok := index.IndexTags[tag]
+
+					if !ok {
+						index.IndexTags[tag] = map[int]string{}
+						tagIndex.Index(tag, tag)
+					}
+
+					index.IndexTags[tag][updatedPost.Header.Index] = updatedPost.Header.Id
+				}
+			}
+		}
+
 		// Persist changes to storage in the background
 		go Finalize(data.PersistAll)
+	} else {
+		UpdateTags(header.Id, header.Index, header.Tags, updatedPost.Header.Tags)
+		header.Tags = updatedPost.Header.Tags
+		header.FileCount = updatedPost.Header.FileCount
+		header.Updated = updatedPost.Header.Updated
 	}
 
 	index.Index[updatedPost.Header.Id] = header

@@ -11,6 +11,7 @@
   export let post: Post = undefined;
   export let statusUpdate: (status: string) => void;
 
+  let initializedFlag: boolean = false;
   let localUser: AppUser = undefined;
 
   appService.user.subscribe((value) => {
@@ -25,6 +26,7 @@
     setData(post.content);
     if (post.header.tags && post.header.tags.length > 0)
       tags = post.header.tags;
+    initializedFlag = true;
   } else {
     setData("");
     const formData = new FormData();
@@ -36,12 +38,14 @@
 
     appService.CreatePost(formData).then((newPost: Post) => {
       post = newPost;
+      initializedFlag = true;
     });
   }
 
   onDestroy(() => {
     if (isNewPost && post.header.title == "") {
       // This post was never really started, so delete before leaving...
+      initializedFlag = false;
       appService.DeletePost(post.header.id);
     }
   });
@@ -80,6 +84,7 @@
       appService.UpdatePost(post.header.id, formData).then((post: Post) => {
         if (!draft) {
           //goto("/posts/" + post.header.id);
+          initializedFlag = false;
           goto("/home");
         } else if (statusUpdate) statusUpdate("Draft saved");
       });
@@ -91,6 +96,7 @@
 
       appService.CreatePost(formData).then((post: Post) => {
         //goto("/posts/" + post.header.id);
+        initializedFlag = false;
         goto("/home");
       });
     }
@@ -110,7 +116,8 @@
 
   function saveDraft() {
     if (statusUpdate) statusUpdate("Saving draft...");
-    submit(true);
+
+    if (post && initializedFlag) submit(true);
   }
 </script>
 

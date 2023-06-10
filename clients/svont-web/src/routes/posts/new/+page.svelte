@@ -28,7 +28,7 @@
     on:submit={submitClick}
   />
 
-  <PostNew bind:this={form} {statusUpdate} />
+  <PostNew bind:this={form} post={undefined} {statusUpdate} />
 </div>
 
 <style>
