@@ -4,23 +4,39 @@
   import type { PostOverview } from "./DataInterface";
   import { ToTitleCase } from "./DataInterface";
   import { appService } from "./DataService";
+  import UserPopup from "./User.popup.svelte";
+
   export let post: PostOverview = undefined;
 
   let dateString = "";
+  let userPopupVisible = false;
 
   onMount(async function () {
     console.log(post.created);
     let nd = new Date(post.created);
     dateString = nd.toDateString();
   });
+
+  function showUserPopup() {
+    console.log("Showing user popup...");
+    userPopupVisible = true;
+  }
+
+  function hideUserPopup() {
+    console.log("Hiding user popup...");
+    userPopupVisible = false;
+  }
 </script>
 
 <div class="container">
   {#if post}
     <a href={"/posts/" + post.id}>
       <div class="frame">
+        {#if userPopupVisible}
+          <UserPopup onEnter={showUserPopup} onLeave={hideUserPopup} />
+        {/if}
         <div class="user">
-          <div class="profile">
+          <div class="profile" on:mouseenter={showUserPopup}>
             <img
               class="profile"
               width="24"

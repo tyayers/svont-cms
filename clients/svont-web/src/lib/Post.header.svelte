@@ -1,12 +1,12 @@
 <script lang="ts">
   import { UserState, type AppUser, type Post } from "./DataInterface";
   import { appService } from "./DataService";
-
+  import UserPopup from "./User.popup.svelte";
   export let post: Post = undefined;
 
   let localUser: AppUser = undefined;
   let localUserState: UserState = UserState.Unknown;
-
+  let userPopupVisible = false;
   appService.userState.subscribe((value) => {
     localUserState = value;
   });
@@ -63,18 +63,32 @@
       appService.Navigate("/");
     });
   }
+
+  function showUserPopup() {
+    console.log("Showing user popup...");
+    userPopupVisible = true;
+  }
+
+  function hideUserPopup() {
+    console.log("Hiding user popup...");
+    userPopupVisible = false;
+  }
 </script>
 
 <div class="container">
   {#if post}
     <div class="frame">
       <div class="profile">
+        {#if userPopupVisible}
+          <UserPopup onEnter={showUserPopup} onLeave={hideUserPopup} />
+        {/if}
         <img
           alt="user profile"
           class="profile"
           width="24"
           src={post.header.authorProfilePic}
           referrerpolicy="no-referrer"
+          on:mouseenter={showUserPopup}
         />
       </div>
       <div class="bylines">

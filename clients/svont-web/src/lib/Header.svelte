@@ -61,7 +61,9 @@
 <div class:headersmall={small === true} class="header">
   <div class="left">
     <div class="logo_box" on:click={goHome} on:keydown={goHome}>
-      <img class="logo" src={LogoPath} alt="Site logo" />
+      <!-- <img class="logo" src={LogoPath} alt="Site logo" /> -->
+      <!-- <span class="title">ggo-1 blog</span> -->
+      <span class="title">Jellybn</span>
     </div>
     {#if showSearch}
       <SearchBox search={searchPosts} on:click={searchClick} />
@@ -137,13 +139,19 @@
     align-items: center;
     justify-content: center;
     margin-left: 34px;
+    cursor: pointer;
   }
 
   .logo {
     position: relative;
     /* top: 10px; */
     height: 44px;
-    cursor: pointer;
+  }
+
+  .title {
+    font-weight: 600;
+    font-size: 22px;
+    color: darkgray;
   }
 
   .status_text {
