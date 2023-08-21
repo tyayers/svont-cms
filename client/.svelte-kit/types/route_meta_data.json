@@ -1,0 +1,32 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/admin": [
+		"src/routes/admin/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/home": [
+		"src/routes/home/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/posts/new": [
+		"src/routes/+layout.ts"
+	],
+	"/posts/[slug]": [
+		"src/routes/posts/[slug]/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/posts/[slug]/edit": [
+		"src/routes/posts/[slug]/edit/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/signin": [
+		"src/routes/+layout.ts"
+	],
+	"/tags/[slug]": [
+		"src/routes/tags/[slug]/+page.ts",
+		"src/routes/+layout.ts"
+	]
+}

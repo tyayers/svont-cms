@@ -1,6 +1,0 @@
-{
-  "compilerOptions": {
-    "experimentalDecorators": true
-  },
-  "extends": "astro/tsconfigs/strict"
-}
